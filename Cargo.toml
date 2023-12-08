@@ -1,0 +1,16 @@
+[package]
+authors = ["aizcutei <aiz.cutei@gmail.com>"]
+repository = "htttps://github.com/aizcutei/nanometers"
+name = "nanometers"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cpal = "0.15.2"
+pixels = "0.13"
+tiny-skia = "0.11.3"
+toml = "0.8.8"
+winit = "0.28"
+winit_input_helper = "0.14"
