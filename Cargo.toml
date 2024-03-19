@@ -3,7 +3,7 @@ name = "nanometers"
 version = "0.1.0"
 authors = ["aizcutei <aiz.cutei@gmail.com>"]
 edition = "2021"
-rust-version = "1.72"
+rust-version = "1.76"
 
 
 [dependencies]

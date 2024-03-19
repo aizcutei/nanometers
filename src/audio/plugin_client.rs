@@ -43,7 +43,7 @@ impl AudioSource for PluginClient {
         let name = {
             use NameTypeSupport::*;
             match NameTypeSupport::query() {
-                OnlyPaths => "/tmp/example.sock",
+                OnlyPaths => "/tmp/nanometers.sock",
                 OnlyNamespaced | Both => "@nanometers.sock",
             }
         };
