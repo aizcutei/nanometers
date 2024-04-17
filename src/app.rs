@@ -1,11 +1,22 @@
+use crate::audio::{plugin_client, PluginClient, SystemCapture};
+use crate::AudioSource;
 use eframe::egui::{self, ViewportCommand};
+use std::sync::mpsc::{Receiver, Sender};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct NanometersApp {
     #[serde(skip)]
-    raw_buffer: Vec<Vec<f32>>,
+    audio_source: Option<Box<dyn AudioSource>>,
+
+    #[serde(skip)]
+    raw_left: Arc<Mutex<[f32]>>,
+
+    #[serde(skip)]
+    raw_right: Arc<Mutex<[f32]>>,
 
     #[serde(skip)]
     stft_bufer: Vec<Vec<f32>>,
@@ -16,9 +27,21 @@ pub struct NanometersApp {
 
 impl Default for NanometersApp {
     fn default() -> Self {
+        let raw_left = Arc::new(Mutex::new([0.0; 48000 * 5 + 2]));
+        let raw_right = Arc::new(Mutex::new([0.0; 48000 * 5 + 2]));
+        let mut plugin_client = PluginClient::new(|data| {
+            // let mut left = raw_left.lock().unwrap();
+            // let mut right = raw_right.lock().unwrap();
+            println!("{}", data[0].len());
+        });
+        plugin_client.start();
+
+        let audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
+
         Self {
-            // Example stuff:
-            raw_buffer: vec![vec![0.0; 0]; 2],
+            audio_source,
+            raw_left,
+            raw_right,
             stft_bufer: vec![vec![0.0; 0]; 2],
             db: 0.0,
         }
