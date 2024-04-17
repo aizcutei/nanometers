@@ -29,9 +29,8 @@ impl Default for NanometersApp {
     fn default() -> Self {
         let raw_left = Arc::new(Mutex::new([0.0; 48000 * 5 + 2]));
         let raw_right = Arc::new(Mutex::new([0.0; 48000 * 5 + 2]));
+
         let mut plugin_client = PluginClient::new(|data| {
-            // let mut left = raw_left.lock().unwrap();
-            // let mut right = raw_right.lock().unwrap();
             println!("{}", data[0].len());
         });
         plugin_client.start();

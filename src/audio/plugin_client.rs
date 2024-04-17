@@ -62,7 +62,13 @@ impl AudioSource for PluginClient {
                     _ => {}
                 }
 
-                let mut conn = LocalSocketStream::connect(name).unwrap();
+                let mut conn = match LocalSocketStream::connect(name) {
+                    Ok(conn) => conn,
+                    Err(e) => {
+                        thread::sleep(Duration::from_millis(100));
+                        continue;
+                    }
+                };
                 let mut update_buf: Vec<f32> = Vec::new();
                 match conn.read(&mut buf) {
                     Ok(_) => {
