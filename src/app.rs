@@ -1,6 +1,9 @@
+#[allow(unused)]
 use crate::audio::{plugin_client, PluginClient, SystemCapture};
 use crate::AudioSource;
+use crate::RingBuffer;
 use eframe::egui::{self, ViewportCommand};
+use eframe::wgpu::rwh::HasWindowHandle;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -13,13 +16,16 @@ pub struct NanometersApp {
     audio_source: Option<Box<dyn AudioSource>>,
 
     #[serde(skip)]
-    raw_left: Arc<Mutex<[f32]>>,
+    raw_l: RingBuffer,
 
     #[serde(skip)]
-    raw_right: Arc<Mutex<[f32]>>,
+    raw_r: RingBuffer,
 
     #[serde(skip)]
-    stft_bufer: Vec<Vec<f32>>,
+    tx: Option<Sender<Vec<Vec<f32>>>>,
+
+    #[serde(skip)]
+    update_handle: Option<thread::JoinHandle<()>>,
 
     #[serde(skip)]
     db: f64,
@@ -27,21 +33,30 @@ pub struct NanometersApp {
 
 impl Default for NanometersApp {
     fn default() -> Self {
-        let raw_left = Arc::new(Mutex::new([0.0; 48000 * 5 + 2]));
-        let raw_right = Arc::new(Mutex::new([0.0; 48000 * 5 + 2]));
+        let raw_l = RingBuffer::new(240000);
+        let raw_r = RingBuffer::new(240000);
 
-        let mut plugin_client = PluginClient::new(|data| {
-            println!("{}", data[0].len());
-        });
-        plugin_client.start();
+        // let (tx, rx) = std::sync::mpsc::channel();
+        // let txs = tx.clone();
+        // let callback = Box::new(move |data: Vec<Vec<f32>>| {
+        //     txs.send(data).unwrap();
+        // });
 
-        let audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
+        // let mut plugin_client = SystemCapture::new(callback);
+        // plugin_client.start();
+        // let audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
+
+        // let mut update_handle = Some(thread::spawn(move || loop {
+        //     let temp = rx.recv().unwrap();
+        //     println!("{:?}", temp[0].len());
+        // }));
 
         Self {
-            audio_source,
-            raw_left,
-            raw_right,
-            stft_bufer: vec![vec![0.0; 0]; 2],
+            audio_source: None,
+            raw_l,
+            raw_r,
+            tx: None,
+            update_handle: None,
             db: 0.0,
         }
     }
@@ -63,18 +78,22 @@ impl NanometersApp {
 }
 
 impl eframe::App for NanometersApp {
-    /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 
-    /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         custom_window_frame(ctx, "drag to move", |ui| {
             ui.label("This is just the contents of the window.");
             ui.horizontal(|ui| {
                 ui.label("egui theme:");
                 egui::widgets::global_dark_light_mode_buttons(ui);
+                if ui.button("w").clicked() {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize([800.0, 600.0].into()));
+                }
+                if ui.button("deco").clicked() {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::StartDrag);
+                }
                 if ui.button("exit").clicked() {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                 }
@@ -132,15 +151,15 @@ fn title_bar_ui(ui: &mut egui::Ui, title_bar_rect: eframe::epaint::Rect, title: 
 
     // Interact with the title bar (drag to move window):
 
-    if title_bar_response.is_pointer_button_down_on() {
+    if title_bar_response.is_pointer_button_down_on() && ui.ctx().input(|i| i.key_pressed(Key::A)) {
         ui.ctx().send_viewport_cmd(ViewportCommand::StartDrag);
     }
 
-    // ui.allocate_ui_at_rect(title_bar_rect, |ui| {
-    //     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-    //         ui.spacing_mut().item_spacing.x = 0.0;
-    //         ui.visuals_mut().button_frame = false;
-    //         ui.add_space(8.0);
-    //     });
-    // });
+    ui.allocate_ui_at_rect(title_bar_rect, |ui| {
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.spacing_mut().item_spacing.x = 0.0;
+            ui.visuals_mut().button_frame = false;
+            ui.add_space(8.0);
+        });
+    });
 }

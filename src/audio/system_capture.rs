@@ -9,13 +9,14 @@ pub struct SystemCapture {
 }
 
 impl SystemCapture {
-    pub fn new(callback: fn(Vec<Vec<f32>>)) -> Self {
+    pub fn new(callback: Box<dyn FnMut(Vec<Vec<f32>>) + Send>) -> Self {
         let name = "System Default Output".to_string();
-        let ruhear = RUHear::new(Arc::new(Mutex::new(callback)));
+        let callback = Arc::new(Mutex::new(callback));
+        let ruhear = RUHear::new(callback.clone());
         Self {
             name,
             ruhear,
-            callback: Arc::new(Mutex::new(callback)),
+            callback,
         }
     }
 }

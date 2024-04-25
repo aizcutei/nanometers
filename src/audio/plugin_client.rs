@@ -21,7 +21,7 @@ pub struct PluginClient {
 }
 
 impl PluginClient {
-    pub fn new(callback: fn(Vec<Vec<f32>>)) -> Self {
+    pub fn new(callback: Box<dyn FnMut(Vec<Vec<f32>>) + Send>) -> Self {
         let name = "Plugin Server".to_string();
         let (tx, rx) = mpsc::channel();
         Self {

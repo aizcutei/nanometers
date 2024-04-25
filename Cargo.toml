@@ -7,21 +7,23 @@ rust-version = "1.76"
 
 
 [dependencies]
-egui = "0.26.0"
-eframe = { version = "0.26.2", default-features = false, features = [
-    "default_fonts", # Embed the default egui fonts.
-    "wgpu",          # Use the glow rendering backend. Alternative: "wgpu".
-    "persistence",   # Enable restoring app state when restarting the app.
+egui = "0.27.2"
+eframe = { version = "0.27.2", default-features = false, features = [
+    "default_fonts", 
+    "wgpu",
+    "persistence",
 ] }
-log = "0.4"
 serde = { version = "1", features = ["derive"] }
-ruhear = "0.1.0"
 cpal = {version = "0.15.3", exclude = ["js-sys"]}
 interprocess = "1.2.1"
 env_logger = { version = "0.11", default-features = false, features = [
     "auto-color",
     "humantime",
 ] }
+anyhow = "1.0"
+rustfft = "6.2.0"
+ruhear = "0.1.0"
+log = "0.4"
 
 [profile.release]
 opt-level = 2 # fast and small wasm
