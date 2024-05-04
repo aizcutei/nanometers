@@ -18,9 +18,8 @@ pub use stereogram::*;
 pub use theme::*;
 pub use waveform::*;
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Setting {
-    pub module: Module,
     pub theme: Theme,
     pub audio_device: AudioDeviceSetting,
     pub waveform: Waveform,
@@ -28,4 +27,30 @@ pub struct Setting {
     pub stereogram: Stereogram,
     pub oscilloscope: Oscilloscope,
     pub spectrum: Spectrum,
+    pub sequence: Vec<Vec<ModuleList>>,
+}
+
+impl Default for Setting {
+    fn default() -> Self {
+        Self {
+            theme: Theme::default(),
+            audio_device: AudioDeviceSetting::default(),
+            waveform: Waveform::default(),
+            spectrogram: Spectrogram::default(),
+            stereogram: Stereogram::default(),
+            oscilloscope: Oscilloscope::default(),
+            spectrum: Spectrum::default(),
+            sequence: vec![
+                vec![
+                    ModuleList::Waveform,
+                    ModuleList::Spectrogram,
+                    ModuleList::Stereogram,
+                    ModuleList::Oscilloscope,
+                    ModuleList::Spectrum,
+                    ModuleList::Peak,
+                ],
+                vec![],
+            ],
+        }
+    }
 }

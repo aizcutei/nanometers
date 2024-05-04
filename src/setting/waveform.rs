@@ -9,7 +9,7 @@ pub enum WaveformMode {
 }
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub enum Channel {
+pub enum WaveformChannel {
     #[default]
     None,
     Left,
@@ -28,8 +28,8 @@ pub enum WaveformHistory {
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
 pub struct Waveform {
-    pub(crate) channel_1: Channel,
-    pub(crate) channel_2: Channel,
+    pub(crate) channel_1: WaveformChannel,
+    pub(crate) channel_2: WaveformChannel,
     pub(crate) mode: WaveformMode,
     pub(crate) peak_history: WaveformHistory,
     pub(crate) speed: usize,

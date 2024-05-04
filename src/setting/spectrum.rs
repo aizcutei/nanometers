@@ -2,6 +2,14 @@ use serde::{Deserialize, Serialize};
 use std::default;
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum SpectrumSwitch {
+    #[default]
+    Main,
+    Audio,
+    Ref,
+}
+
+#[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SpectrumMode {
     #[default]
     FFT,

@@ -1,7 +1,12 @@
 #[allow(unused)]
 use crate::audio::{plugin_client, PluginClient, SystemCapture};
+use crate::frame;
+use crate::frame::setting_frame;
+use crate::frame::*;
 use crate::setting;
-use crate::setting::Channel;
+use crate::setting::waveform;
+use crate::setting::ModuleList;
+use crate::utils::rect_alloc;
 use crate::AudioSource;
 use crate::RingBuffer;
 use eframe::egui::{self, ViewportCommand};
@@ -29,15 +34,17 @@ pub struct NanometersApp {
     tx: Option<Sender<Vec<Vec<f32>>>>,
 
     #[serde(skip)]
-    update_handle: Option<thread::JoinHandle<()>>,
+    db: f64,
 
     #[serde(skip)]
-    db: f64,
+    pub(crate) spectrum_switch: setting::SpectrumSwitch,
+
+    pub(crate) setting: setting::Setting,
 
     setting_switch: bool,
     allways_on_top: bool,
-
-    setting: setting::Setting,
+    meter_size: eframe::epaint::Rect,
+    meters_rects: Vec<eframe::epaint::Rect>,
 }
 
 impl Default for NanometersApp {
@@ -65,11 +72,13 @@ impl Default for NanometersApp {
             raw_l,
             raw_r,
             tx: None,
-            update_handle: None,
             db: 0.0,
+            spectrum_switch: setting::SpectrumSwitch::Main,
+            setting: Default::default(),
             setting_switch: false,
             allways_on_top: false,
-            setting: Default::default(),
+            meter_size: Rect::from_two_pos([0.0, 0.0].into(), [600.0, 200.0].into()),
+            meters_rects: vec![],
         }
     }
 }
@@ -129,20 +138,123 @@ impl NanometersApp {
     }
 
     fn meters_ui(&mut self, ui: &mut egui::Ui, meters_rect: eframe::epaint::Rect) {
+        // If window resize
+        if meters_rect != self.meter_size {
+            self.meter_size = meters_rect;
+            self.meters_rects = rect_alloc(
+                self.setting.sequence[1].clone(),
+                self.meters_rects.clone(),
+                meters_rect,
+            );
+        }
+        // If ModuleList changed
+        if self.setting.sequence[1].len() != self.meters_rects.len() {
+            self.meters_rects = rect_alloc(
+                self.setting.sequence[1].clone(),
+                self.meters_rects.clone(),
+                meters_rect,
+            );
+        }
+
+        // ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
+        // println!("{:?}", ui.ctx().pointer_interact_pos());
+
         let painter = ui.painter();
         painter.rect_filled(meters_rect, 0.0, Color32::from_black_alpha(200));
 
-        let meters_response = ui.interact(meters_rect, Id::new("meters_click"), Sense::click());
+        for (i, meter) in self.setting.sequence[1].clone().iter().enumerate() {
+            let mut meter_rect = self.meters_rects[i];
+            match meter {
+                ModuleList::Waveform => {
+                    self.waveform_frame(meter_rect, ui);
+                }
+                ModuleList::Spectrogram => {
+                    self.spectrogram_frame(meter_rect, ui);
+                }
+                ModuleList::Peak => {
+                    self.peak_frame(meter_rect, ui);
+                }
+                ModuleList::Oscilloscope => {
+                    self.oscilloscope_frame(meter_rect, ui);
+                }
+                ModuleList::Spectrum => {
+                    self.spectrum_frame(meter_rect, ui);
+                }
+                ModuleList::Stereogram => {
+                    self.stereogram_frame(meter_rect, ui);
+                }
+            }
+        }
 
+        let painter2 = ui.painter();
+        // Get mouse position
+        // for (i, rect) in self.meters_rects.clone().iter().enumerate() {
+        //     if i != self.meters_rects.len() - 1 {
+        //         let mut rect = rect.clone();
+        //         rect.min.x = rect.max.x - 5.0;
+        //         rect.max.x += 5.0;
+        //         let rect_response =
+        //             ui.interact(rect, Id::new(format!("resize {}", i)), Sense::click());
+        //         rect_response
+        //             .clone()
+        //             .on_hover_cursor(CursorIcon::ResizeHorizontal);
+        //         if rect_response.clone().contains_pointer() {
+        //             ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
+        //             painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(200));
+        //         } else if rect_response.clone().clicked() {
+        //             let pointer_pos = ui.ctx().pointer_interact_pos();
+        //             println!("{:?}", pointer_pos);
+        //             self.meters_rects[i].max.x = pointer_pos.unwrap().x;
+        //             self.meters_rects[i + 1].min.x = pointer_pos.unwrap().x;
+        //             painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(200));
+        //         }
+        //     }
+        // }
+
+        let meters_response = ui.interact(meters_rect, Id::new("meters_buttons"), Sense::click());
         if meters_response.is_pointer_button_down_on() {
-            ui.ctx().send_viewport_cmd(ViewportCommand::StartDrag);
+            if ui.ctx().input(|key| key.key_pressed(Key::Space)) {
+                ui.ctx().send_viewport_cmd(ViewportCommand::StartDrag);
+            } else {
+                for i in 0..(self.meters_rects.len() - 1) {
+                    let mut rect = self.meters_rects[i].clone();
+                    rect.min.x = rect.max.x - 5.0;
+                    rect.max.x += 5.0;
+
+                    if meters_response.interact_pointer_pos().unwrap().x >= rect.min.x
+                        && meters_response.interact_pointer_pos().unwrap().x <= rect.max.x
+                    {
+                        ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
+                        painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(100));
+                        let pointer_pos = ui.ctx().pointer_interact_pos();
+                        self.meters_rects[i].max.x = pointer_pos.unwrap().x;
+                        self.meters_rects[i + 1].min.x = pointer_pos.unwrap().x;
+                    }
+                }
+                // for (i, rect) in self.meters_rects.iter().enumerate() {
+                //     if i != self.meters_rects.len() - 1 {
+                //         let mut rect = rect.clone();
+                //         rect.min.x = rect.max.x - 10.0;
+                //         rect.max.x += 10.0;
+                //         if meters_response.interact_pointer_pos().unwrap().x >= rect.min.x
+                //             && meters_response.interact_pointer_pos().unwrap().x <= rect.max.x
+                //         {
+                //             ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
+                //             painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(100));
+                //             let pointer_pos = ui.ctx().pointer_interact_pos();
+                //             self.meters_rects[i].max.x = pointer_pos.unwrap().x;
+                //             self.meters_rects[i + 1].min.x = pointer_pos.unwrap().x;
+                //         }
+                //     }
+                // }
+            }
             ui.ctx().send_viewport_cmd(ViewportCommand::MaxInnerSize(
                 ui.ctx().input(|i| i.viewport().monitor_size.unwrap()),
             ))
         } else if meters_response.contains_pointer() {
             ui.label("");
             ui.horizontal(|ui| {
-                ui.label("   ");
+                ui.label("  ");
                 if ui.button("SETTING").clicked() && !self.setting_switch {
                     let new_size = [meters_rect.max.x, meters_rect.max.y + 400.0];
                     self.setting_switch = true;
@@ -166,6 +278,8 @@ impl NanometersApp {
                 if ui.button("QUIT").clicked() {
                     ui.ctx().send_viewport_cmd(ViewportCommand::Close);
                 }
+
+                ui.label("Hold SPACE then drag to move").highlight();
             });
         }
     }
@@ -176,424 +290,29 @@ impl NanometersApp {
 
         setting_area_ui.vertical_centered_justified(|ui| {
             ui.separator();
-            // First row
-            ui.horizontal_top(|ui| {
-                // Waveform
-                ui.group(|ui| {
-                    ui.vertical(|ui| {
-                        ui.heading("Waveform");
-                        ui.horizontal(|ui| {
-                            ui.label("Channel 1");
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_1,
-                                Channel::None,
-                                "None",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_1,
-                                Channel::Left,
-                                "Left",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_1,
-                                Channel::Right,
-                                "Right",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_1,
-                                Channel::Mid,
-                                "Mid",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_1,
-                                Channel::Side,
-                                "Side",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Channel 2");
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_2,
-                                Channel::None,
-                                "None",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_2,
-                                Channel::Left,
-                                "Left",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_2,
-                                Channel::Right,
-                                "Right",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_2,
-                                Channel::Mid,
-                                "Mid",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.channel_2,
-                                Channel::Side,
-                                "Side",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Mode");
-                            ui.selectable_value(
-                                &mut self.setting.waveform.mode,
-                                setting::WaveformMode::Static,
-                                "Static",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.mode,
-                                setting::WaveformMode::MultiBand,
-                                "MultiBand",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Peak History");
-                            ui.selectable_value(
-                                &mut self.setting.waveform.peak_history,
-                                setting::WaveformHistory::Off,
-                                "Off",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.peak_history,
-                                setting::WaveformHistory::Fast,
-                                "Fast",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.waveform.peak_history,
-                                setting::WaveformHistory::Slow,
-                                "Slow",
-                            );
-                        });
-                    });
-                });
-                // Spectrogram
-                ui.group(|ui| {
-                    ui.vertical(|ui| {
-                        ui.heading("Spectrogram");
-                        ui.horizontal(|ui| {
-                            ui.label("Orientation");
-                            ui.selectable_value(
-                                &mut self.setting.spectrogram.orientation,
-                                setting::Orientation::H,
-                                "Horizontal",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrogram.orientation,
-                                setting::Orientation::V,
-                                "Vertical",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Mode");
-                            ui.selectable_value(
-                                &mut self.setting.spectrogram.mode,
-                                setting::SpectrogramMode::Sharp,
-                                "Sharp",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrogram.mode,
-                                setting::SpectrogramMode::Classic,
-                                "Classic",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Curve");
-                            ui.selectable_value(
-                                &mut self.setting.spectrogram.curve,
-                                setting::SpectrogramCurve::Linear,
-                                "Linear",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrogram.curve,
-                                setting::SpectrogramCurve::Logarithmic,
-                                "Logarithmic",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Brightness Boost");
-                            ui.add(
-                                egui::Slider::new(
-                                    &mut self.setting.spectrogram.brightness_boost,
-                                    0.0..=1.0,
-                                )
-                                .text(""),
-                            );
-                        });
-                    });
-                });
-                // Oscilloscope
-                ui.group(|ui| {
-                    ui.vertical(|ui| {
-                        ui.heading("Oscilloscope");
-                        ui.horizontal(|ui| {
-                            ui.label("Follow Pitch");
-                            ui.selectable_value(
-                                &mut self.setting.oscilloscope.follow_pitch,
-                                true,
-                                "On",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.oscilloscope.follow_pitch,
-                                false,
-                                "Off",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Cycle");
-                            ui.selectable_value(
-                                &mut self.setting.oscilloscope.cycle,
-                                setting::OscilloscopeCycle::Multi,
-                                "Multi",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.oscilloscope.cycle,
-                                setting::OscilloscopeCycle::Single,
-                                "Single",
-                            );
-                        });
-                    });
-                });
-                // Audio Device
-                ui.group(|ui| {
-                    ui.vertical(|ui| {
-                        ui.heading("Audio Device");
-                        ui.selectable_value(
-                            &mut self.setting.audio_device.device,
-                            setting::AudioDevice::OutputCapture,
-                            "System Output",
-                        );
-                        ui.selectable_value(
-                            &mut self.setting.audio_device.device,
-                            setting::AudioDevice::PluginCapture,
-                            "Plugin Capture",
-                        );
-                        ui.selectable_value(
-                            &mut self.setting.audio_device.device,
-                            setting::AudioDevice::InputCapture,
-                            "System Input",
-                        );
-                    });
-                })
+            Grid::new("Setting_ui").show(ui, |ui| {
+                self.device_sequence_block(ui);
+                self.waveform_setting_block(ui);
+                self.stereogram_settiing_block(ui);
+                ui.end_row();
+
+                self.spectrogram_setting_block(ui);
+                self.spectrum_setting_block(ui);
+                self.oscilloscope_setting_block(ui);
+                ui.end_row();
+
+                self.device_setting_block(ui);
+                ui.end_row();
             });
-            // Second row
-            ui.horizontal_wrapped(|ui| {
-                // Modules
-                ui.group(|ui| {
-                    ui.vertical(|ui| {
-                        ui.heading("Enable Module");
-                        ui.checkbox(&mut self.setting.module.spectrogram, "Spectrogram");
-                        ui.checkbox(&mut self.setting.module.waveform, "Waveform");
-                        ui.checkbox(&mut self.setting.module.peak, "Peak/LUFS");
-                        ui.checkbox(&mut self.setting.module.stereogram, "Stereogram");
-                        ui.checkbox(&mut self.setting.module.oscilloscope, "Oscilloscope");
-                        ui.checkbox(&mut self.setting.module.spectrum, "Spectrum");
-                    });
-                });
-                // Stereogram
-                ui.group(|ui| {
-                    ui.vertical(|ui| {
-                        ui.heading("Sterogram");
-                        ui.horizontal(|ui| {
-                            ui.label("Mode");
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.mode,
-                                setting::StereogramMode::Logarithmic,
-                                "Logarithmic",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.mode,
-                                setting::StereogramMode::Linear,
-                                "Linear",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.mode,
-                                setting::StereogramMode::Lissajous,
-                                "Lissajous",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Color");
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.color,
-                                setting::StereogramColor::Static,
-                                "Static",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.color,
-                                setting::StereogramColor::RGB,
-                                "RGB",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.color,
-                                setting::StereogramColor::MultiBand,
-                                "MultiBand",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Polarity");
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.polarity,
-                                setting::StereogramPolarity::Uni,
-                                "Uniploar",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.polarity,
-                                setting::StereogramPolarity::Bi,
-                                "Biploar",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Normalize");
-                            ui.selectable_value(
-                                &mut self.setting.stereogram.normalize,
-                                false,
-                                "Off",
-                            );
-                            ui.selectable_value(&mut self.setting.stereogram.normalize, true, "On");
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Guides");
-                            ui.selectable_value(&mut self.setting.stereogram.guides, false, "Off");
-                            ui.selectable_value(&mut self.setting.stereogram.guides, true, "On");
-                        });
-                    });
-                });
-                // Spectrum
-                ui.group(|ui| {
-                    ui.vertical(|ui| {
-                        ui.heading("Spectrum");
-                        ui.horizontal(|ui| {
-                            ui.label("Mode");
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.mode,
-                                setting::SpectrumMode::FFT,
-                                "FFT",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.mode,
-                                setting::SpectrumMode::ColorBar,
-                                "ColorBar",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.mode,
-                                setting::SpectrumMode::Both,
-                                "Both",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Smoothing");
-                            ui.add(
-                                egui::Slider::new(&mut self.setting.spectrum.smoothing, 0.0..=1.25)
-                                    .text(""),
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Slope");
-                            ui.add(
-                                egui::Slider::new(&mut self.setting.spectrum.slope, -9.0..=9.0)
-                                    .text("dB"),
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Channel");
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.channel,
-                                setting::SpectrumChannel::LR,
-                                "L/R",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.channel,
-                                setting::SpectrumChannel::MS,
-                                "Mid/Side",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Low");
-                            ui.add(
-                                egui::Slider::new(&mut self.setting.spectrum.low, -150.0..=-20.0)
-                                    .text("dB"),
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("High");
-                            ui.add(
-                                egui::Slider::new(&mut self.setting.spectrum.high, -50.0..=20.0)
-                                    .text("dB"),
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Freq Readout");
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.freq_readout,
-                                setting::SpectrumFreqReadout::Off,
-                                "Off",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.freq_readout,
-                                setting::SpectrumFreqReadout::Dyn,
-                                "Dyn",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.freq_readout,
-                                setting::SpectrumFreqReadout::Static,
-                                "Static",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Freq Line");
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.freq_line,
-                                setting::SpectrumFreqLine::Off,
-                                "Off",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.freq_line,
-                                setting::SpectrumFreqLine::On,
-                                "On",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.freq_line,
-                                setting::SpectrumFreqLine::Bright,
-                                "Bright",
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Ref Line");
-                            ui.add(
-                                egui::Slider::new(
-                                    &mut self.setting.spectrum.ref_line,
-                                    0.0..=22000.0,
-                                )
-                                .text("Hz"),
-                            );
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Threshold");
-                            ui.add(
-                                egui::Slider::new(
-                                    &mut self.setting.spectrum.threshold,
-                                    -150.0..=0.0,
-                                )
-                                .text("dB"),
-                            );
-                        });
-                    });
-                });
-                // Close button
-                if ui.button("CLOSE SETTING").clicked() && self.setting_switch {
-                    self.setting_switch = false;
-                    let new_size = [setting_rect.max.x, setting_rect.max.y - 400.0];
-                    ui.ctx()
-                        .send_viewport_cmd(ViewportCommand::InnerSize(new_size.into()));
-                    ui.ctx()
-                        .send_viewport_cmd(ViewportCommand::MinInnerSize([800.0, 100.0].into()));
-                }
-            });
+
+            if ui.button("CLOSE SETTING").clicked() && self.setting_switch {
+                self.setting_switch = false;
+                let new_size = [setting_rect.max.x, setting_rect.max.y - 400.0];
+                ui.ctx()
+                    .send_viewport_cmd(ViewportCommand::InnerSize(new_size.into()));
+                ui.ctx()
+                    .send_viewport_cmd(ViewportCommand::MinInnerSize([800.0, 100.0].into()));
+            }
         });
     }
 }
