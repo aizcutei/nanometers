@@ -1,4 +1,6 @@
+use crate::audio::{plugin_client, system_capture, PluginClient, SystemCapture};
 use crate::setting;
+use crate::AudioSource;
 use crate::NanometersApp;
 use egui::*;
 
@@ -193,21 +195,51 @@ impl NanometersApp {
         ui.group(|ui| {
             ui.vertical(|ui| {
                 ui.heading("Audio Device");
-                ui.selectable_value(
-                    &mut self.setting.audio_device.device,
-                    setting::AudioDevice::OutputCapture,
-                    "System Output",
-                );
-                ui.selectable_value(
-                    &mut self.setting.audio_device.device,
-                    setting::AudioDevice::PluginCapture,
-                    "Plugin Capture",
-                );
-                ui.selectable_value(
-                    &mut self.setting.audio_device.device,
-                    setting::AudioDevice::InputCapture,
-                    "System Input",
-                );
+                if ui
+                    .selectable_value(
+                        &mut self.setting.audio_device.device,
+                        setting::AudioDevice::OutputCapture,
+                        "System Output",
+                    )
+                    .changed()
+                {
+                    self.audio_source.as_mut().unwrap().stop();
+                    let tx_lr = self.tx_lr.clone().unwrap();
+                    let callback = Box::new(move |data| {
+                        tx_lr.send(data).unwrap();
+                    });
+                    let mut system_capture = SystemCapture::new(callback);
+                    system_capture.start();
+                    self.audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
+                }
+                if ui
+                    .selectable_value(
+                        &mut self.setting.audio_device.device,
+                        setting::AudioDevice::PluginCapture,
+                        "Plugin Capture",
+                    )
+                    .changed()
+                {
+                    self.audio_source.as_mut().unwrap().stop();
+                    let tx_lr = self.tx_lr.clone().unwrap();
+                    let callback = Box::new(move |data| {
+                        tx_lr.send(data).unwrap();
+                    });
+                    let mut plugin_client = PluginClient::new(callback);
+                    plugin_client.start();
+                    self.audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
+                }
+                if ui
+                    .selectable_value(
+                        &mut self.setting.audio_device.device,
+                        setting::AudioDevice::InputCapture,
+                        "System Input",
+                    )
+                    .changed()
+                {
+                    self.audio_source.as_mut().unwrap().stop();
+                    self.audio_source = None;
+                }
             });
         });
     }

@@ -72,7 +72,7 @@ impl AudioSource for PluginClient {
                 let mut update_buf: Vec<f32> = Vec::new();
                 match conn.read(&mut buf) {
                     Ok(_) => {
-                        let mut buffer = buf
+                        let buffer = buf
                             .chunks_exact(4)
                             .map(|chunk| {
                                 f32::from_ne_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])

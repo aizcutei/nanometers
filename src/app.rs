@@ -1,19 +1,18 @@
-#[allow(unused)]
-use crate::audio::{plugin_client, PluginClient, SystemCapture};
+#![allow(dead_code)]
+use crate::audio::{plugin_client, system_capture, PluginClient, SystemCapture};
 use crate::frame;
 use crate::frame::setting_frame;
 use crate::frame::*;
-use crate::setting;
 use crate::setting::waveform;
-use crate::setting::ModuleList;
+use crate::setting::*;
 use crate::utils::rect_alloc;
 use crate::AudioSource;
 use crate::RingBuffer;
+use crossbeam_channel::unbounded;
+use crossbeam_channel::{Receiver, Sender};
 use eframe::egui::{self, ViewportCommand};
 use eframe::wgpu::rwh::HasWindowHandle;
-use egui::Sense;
 use egui::*;
-use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -22,7 +21,7 @@ use std::thread;
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct NanometersApp {
     #[serde(skip)]
-    audio_source: Option<Box<dyn AudioSource>>,
+    pub(crate) audio_source: Option<Box<dyn AudioSource>>,
 
     #[serde(skip)]
     raw_l: RingBuffer,
@@ -31,15 +30,18 @@ pub struct NanometersApp {
     raw_r: RingBuffer,
 
     #[serde(skip)]
-    tx: Option<Sender<Vec<Vec<f32>>>>,
+    pub(crate) tx_lr: Option<Sender<Vec<Vec<f32>>>>,
+
+    #[serde(skip)]
+    pub(crate) rx_lr: Option<Receiver<Vec<Vec<f32>>>>,
 
     #[serde(skip)]
     db: f64,
 
     #[serde(skip)]
-    pub(crate) spectrum_switch: setting::SpectrumSwitch,
+    pub(crate) spectrum_switch: SpectrumSwitch,
 
-    pub(crate) setting: setting::Setting,
+    pub(crate) setting: Setting,
 
     setting_switch: bool,
     allways_on_top: bool,
@@ -52,28 +54,25 @@ impl Default for NanometersApp {
         let raw_l = RingBuffer::new(240000);
         let raw_r = RingBuffer::new(240000);
 
-        // let (tx, rx) = std::sync::mpsc::channel();
-        // let txs = tx.clone();
-        // let callback = Box::new(move |data: Vec<Vec<f32>>| {
-        //     txs.send(data).unwrap();
-        // });
+        let (tx_lr, rx_lr) = unbounded();
+        let tx_lr_save = Some(tx_lr.clone());
+        let rx_lr_save = Some(rx_lr.clone());
+        let callback = Box::new(move |data: Vec<Vec<f32>>| {
+            tx_lr.send(data).unwrap();
+        });
 
-        // let mut plugin_client = SystemCapture::new(callback);
-        // plugin_client.start();
-        // let audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
-
-        // let mut update_handle = Some(thread::spawn(move || loop {
-        //     let temp = rx.recv().unwrap();
-        //     println!("{:?}", temp[0].len());
-        // }));
+        let mut system_capture = SystemCapture::new(callback);
+        system_capture.start();
+        let audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
 
         Self {
-            audio_source: None,
+            audio_source,
             raw_l,
             raw_r,
-            tx: None,
+            tx_lr: tx_lr_save,
+            rx_lr: rx_lr_save,
             db: 0.0,
-            spectrum_switch: setting::SpectrumSwitch::Main,
+            spectrum_switch: SpectrumSwitch::Main,
             setting: Default::default(),
             setting_switch: false,
             allways_on_top: false,
@@ -103,6 +102,7 @@ impl eframe::App for NanometersApp {
 
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.main_frame(ctx);
+        ctx.request_repaint();
     }
 }
 
@@ -117,6 +117,7 @@ impl NanometersApp {
             .frame(full_frame)
             .show(ctx, |ui| {
                 let app_rect = ui.max_rect();
+
                 if self.setting_switch {
                     let meters_rect = {
                         let mut rect = app_rect;
@@ -134,10 +135,12 @@ impl NanometersApp {
                 } else {
                     self.meters_ui(ui, app_rect);
                 }
+                #[cfg(target_os = "windows")]
+                frame::resize_ui(ui, app_rect);
             });
     }
 
-    fn meters_ui(&mut self, ui: &mut egui::Ui, meters_rect: eframe::epaint::Rect) {
+    fn meters_ui(&mut self, ui: &mut Ui, meters_rect: Rect) {
         // If window resize
         if meters_rect != self.meter_size {
             self.meter_size = meters_rect;
@@ -156,11 +159,24 @@ impl NanometersApp {
             );
         }
 
-        // ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
-        // println!("{:?}", ui.ctx().pointer_interact_pos());
+        if self.setting.sequence[1].is_empty() {
+            let painter = ui.painter();
+            painter.rect_filled(meters_rect, 0.0, Color32::from_black_alpha(200));
+            painter.text(
+                meters_rect.center(),
+                Align2::CENTER_CENTER,
+                "Add a Meter",
+                FontId::proportional(20.0),
+                Color32::WHITE,
+            );
+        }
 
-        let painter = ui.painter();
-        painter.rect_filled(meters_rect, 0.0, Color32::from_black_alpha(200));
+        self.rx_lr.as_mut().unwrap().try_iter().for_each(|data| {
+            self.raw_l.push(data[0].clone());
+            self.raw_r.push(data[1].clone());
+        });
+        println!("raw_l: {:?}", self.raw_l.index());
+        // println!("raw_r: {:?}", self.raw_r.index());
 
         for (i, meter) in self.setting.sequence[1].clone().iter().enumerate() {
             let mut meter_rect = self.meters_rects[i];
@@ -187,66 +203,40 @@ impl NanometersApp {
         }
 
         let painter2 = ui.painter();
-        // Get mouse position
-        // for (i, rect) in self.meters_rects.clone().iter().enumerate() {
-        //     if i != self.meters_rects.len() - 1 {
-        //         let mut rect = rect.clone();
-        //         rect.min.x = rect.max.x - 5.0;
-        //         rect.max.x += 5.0;
-        //         let rect_response =
-        //             ui.interact(rect, Id::new(format!("resize {}", i)), Sense::click());
-        //         rect_response
-        //             .clone()
-        //             .on_hover_cursor(CursorIcon::ResizeHorizontal);
-        //         if rect_response.clone().contains_pointer() {
-        //             ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
-        //             painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(200));
-        //         } else if rect_response.clone().clicked() {
-        //             let pointer_pos = ui.ctx().pointer_interact_pos();
-        //             println!("{:?}", pointer_pos);
-        //             self.meters_rects[i].max.x = pointer_pos.unwrap().x;
-        //             self.meters_rects[i + 1].min.x = pointer_pos.unwrap().x;
-        //             painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(200));
-        //         }
-        //     }
-        // }
+        for (i, rect) in self.meters_rects.clone().iter().enumerate() {
+            if i != self.meters_rects.len() - 1 {
+                let mut rect = rect.clone();
+                rect.min.x = rect.max.x - 5.0;
+                rect.max.x += 5.0;
+                let rect_response = ui.interact(
+                    rect,
+                    Id::new(format!("resize {}", i)),
+                    Sense::click_and_drag(),
+                );
+                rect_response
+                    .clone()
+                    .on_hover_cursor(CursorIcon::ResizeHorizontal);
+                if rect_response.clone().contains_pointer() {
+                    ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
+                    painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(200));
+                } else if rect_response.clone().dragged() {
+                    let pointer_pos = ui.ctx().pointer_interact_pos();
+                    self.meters_rects[i].max.x = pointer_pos.unwrap().x;
+                    self.meters_rects[i + 1].min.x = pointer_pos.unwrap().x;
+                    painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(200));
+                }
+            }
+        }
 
-        let meters_response = ui.interact(meters_rect, Id::new("meters_buttons"), Sense::click());
+        let meters_response = ui.interact(
+            meters_rect,
+            Id::new("meters_buttons"),
+            // Sense::union(Sense::click(), Sense::click_and_drag()),
+            Sense::click(),
+        );
         if meters_response.is_pointer_button_down_on() {
             if ui.ctx().input(|key| key.key_pressed(Key::Space)) {
                 ui.ctx().send_viewport_cmd(ViewportCommand::StartDrag);
-            } else {
-                for i in 0..(self.meters_rects.len() - 1) {
-                    let mut rect = self.meters_rects[i].clone();
-                    rect.min.x = rect.max.x - 5.0;
-                    rect.max.x += 5.0;
-
-                    if meters_response.interact_pointer_pos().unwrap().x >= rect.min.x
-                        && meters_response.interact_pointer_pos().unwrap().x <= rect.max.x
-                    {
-                        ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
-                        painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(100));
-                        let pointer_pos = ui.ctx().pointer_interact_pos();
-                        self.meters_rects[i].max.x = pointer_pos.unwrap().x;
-                        self.meters_rects[i + 1].min.x = pointer_pos.unwrap().x;
-                    }
-                }
-                // for (i, rect) in self.meters_rects.iter().enumerate() {
-                //     if i != self.meters_rects.len() - 1 {
-                //         let mut rect = rect.clone();
-                //         rect.min.x = rect.max.x - 10.0;
-                //         rect.max.x += 10.0;
-                //         if meters_response.interact_pointer_pos().unwrap().x >= rect.min.x
-                //             && meters_response.interact_pointer_pos().unwrap().x <= rect.max.x
-                //         {
-                //             ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
-                //             painter2.rect_filled(rect, 0.0, Color32::from_black_alpha(100));
-                //             let pointer_pos = ui.ctx().pointer_interact_pos();
-                //             self.meters_rects[i].max.x = pointer_pos.unwrap().x;
-                //             self.meters_rects[i + 1].min.x = pointer_pos.unwrap().x;
-                //         }
-                //     }
-                // }
             }
             ui.ctx().send_viewport_cmd(ViewportCommand::MaxInnerSize(
                 ui.ctx().input(|i| i.viewport().monitor_size.unwrap()),
