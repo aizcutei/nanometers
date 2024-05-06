@@ -175,7 +175,7 @@ impl NanometersApp {
             self.raw_l.push(data[0].clone());
             self.raw_r.push(data[1].clone());
         });
-        println!("raw_l: {:?}", self.raw_l.index());
+        // println!("raw_l: {:?}", self.raw_l.index());
         // println!("raw_r: {:?}", self.raw_r.index());
 
         for (i, meter) in self.setting.sequence[1].clone().iter().enumerate() {

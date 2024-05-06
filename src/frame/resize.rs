@@ -47,58 +47,54 @@ pub fn resize_ui(ui: &mut egui::Ui, rect: egui::Rect) {
 pub fn top_edge(ui: &mut egui::Ui, top_edge_rect: eframe::epaint::Rect) {
     let top_edge_response = ui.interact(top_edge_rect, Id::new("top_edge"), Sense::click());
 
-    let top_edge_hover = ui.interact(top_edge_rect, Id::new("top_edge"), Sense::hover());
-
     if top_edge_response.is_pointer_button_down_on() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeVertical);
         ui.ctx().send_viewport_cmd(ViewportCommand::BeginResize(
             viewport::ResizeDirection::North,
         ));
+    } else if top_edge_response.contains_pointer() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeVertical);
     }
-
-    top_edge_hover.on_hover_cursor(CursorIcon::ResizeVertical);
 }
 
 pub fn bottom_edge(ui: &mut egui::Ui, bottom_edge_rect: eframe::epaint::Rect) {
     let bottom_edge_response =
         ui.interact(bottom_edge_rect, Id::new("bottom_edge"), Sense::click());
 
-    let bottom_edge_hover = ui.interact(bottom_edge_rect, Id::new("bottom_edge"), Sense::hover());
-
     if bottom_edge_response.is_pointer_button_down_on() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeVertical);
         ui.ctx().send_viewport_cmd(ViewportCommand::BeginResize(
             viewport::ResizeDirection::South,
         ));
+    } else if bottom_edge_response.contains_pointer() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeVertical);
     }
-
-    bottom_edge_hover.on_hover_cursor(CursorIcon::ResizeVertical);
 }
 
 pub fn left_edge(ui: &mut egui::Ui, left_edge_rect: eframe::epaint::Rect) {
     let left_edge_response = ui.interact(left_edge_rect, Id::new("left_edge"), Sense::click());
 
-    let left_edge_hover = ui.interact(left_edge_rect, Id::new("left_edge"), Sense::hover());
-
     if left_edge_response.is_pointer_button_down_on() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
         ui.ctx().send_viewport_cmd(ViewportCommand::BeginResize(
             viewport::ResizeDirection::West,
         ));
+    } else if left_edge_response.contains_pointer() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
     }
-
-    left_edge_hover.on_hover_cursor(CursorIcon::ResizeHorizontal);
 }
 
 pub fn right_edge(ui: &mut egui::Ui, right_edge_rect: eframe::epaint::Rect) {
     let right_edge_response = ui.interact(right_edge_rect, Id::new("right_edge"), Sense::click());
 
-    let right_edge_hover = ui.interact(right_edge_rect, Id::new("right_edge"), Sense::hover());
-
     if right_edge_response.is_pointer_button_down_on() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
         ui.ctx().send_viewport_cmd(ViewportCommand::BeginResize(
             viewport::ResizeDirection::East,
         ));
+    } else if right_edge_response.contains_pointer() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
     }
-
-    right_edge_hover.on_hover_cursor(CursorIcon::ResizeHorizontal);
 }
 
 pub fn left_top_corner(ui: &mut egui::Ui, left_top_corner_rect: eframe::epaint::Rect) {
@@ -108,19 +104,14 @@ pub fn left_top_corner(ui: &mut egui::Ui, left_top_corner_rect: eframe::epaint::
         Sense::click(),
     );
 
-    let left_top_corner_hover = ui.interact(
-        left_top_corner_rect,
-        Id::new("left_top_corner"),
-        Sense::hover(),
-    );
-
     if left_top_corner_response.is_pointer_button_down_on() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeNwSe);
         ui.ctx().send_viewport_cmd(ViewportCommand::BeginResize(
             viewport::ResizeDirection::NorthWest,
         ));
+    } else if left_top_corner_response.contains_pointer() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeNwSe);
     }
-
-    left_top_corner_hover.on_hover_cursor(CursorIcon::ResizeNwSe);
 }
 
 pub fn right_top_corner(ui: &mut egui::Ui, right_top_corner_rect: eframe::epaint::Rect) {
@@ -130,19 +121,14 @@ pub fn right_top_corner(ui: &mut egui::Ui, right_top_corner_rect: eframe::epaint
         Sense::click(),
     );
 
-    let right_top_corner_hover = ui.interact(
-        right_top_corner_rect,
-        Id::new("right_top_corner"),
-        Sense::hover(),
-    );
-
     if right_top_corner_response.is_pointer_button_down_on() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeNeSw);
         ui.ctx().send_viewport_cmd(ViewportCommand::BeginResize(
             viewport::ResizeDirection::NorthEast,
         ));
+    } else if right_top_corner_response.contains_pointer() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeNeSw);
     }
-
-    right_top_corner_hover.on_hover_cursor(CursorIcon::ResizeNeSw);
 }
 
 pub fn left_bottom_corner(ui: &mut egui::Ui, left_bottom_corner_rect: eframe::epaint::Rect) {
@@ -152,19 +138,14 @@ pub fn left_bottom_corner(ui: &mut egui::Ui, left_bottom_corner_rect: eframe::ep
         Sense::click(),
     );
 
-    let left_bottom_corner_hover = ui.interact(
-        left_bottom_corner_rect,
-        Id::new("left_bottom_corner"),
-        Sense::hover(),
-    );
-
     if left_bottom_corner_response.is_pointer_button_down_on() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeNeSw);
         ui.ctx().send_viewport_cmd(ViewportCommand::BeginResize(
             viewport::ResizeDirection::SouthWest,
         ));
+    } else if left_bottom_corner_response.contains_pointer() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeNeSw);
     }
-
-    left_bottom_corner_hover.on_hover_cursor(CursorIcon::ResizeNeSw);
 }
 
 pub fn right_bottom_corner(ui: &mut egui::Ui, right_bottom_corner_rect: eframe::epaint::Rect) {
@@ -174,17 +155,12 @@ pub fn right_bottom_corner(ui: &mut egui::Ui, right_bottom_corner_rect: eframe::
         Sense::click(),
     );
 
-    let right_bottom_corner_hover = ui.interact(
-        right_bottom_corner_rect,
-        Id::new("right_bottom_corner"),
-        Sense::hover(),
-    );
-
     if right_bottom_corner_response.is_pointer_button_down_on() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeNwSe);
         ui.ctx().send_viewport_cmd(ViewportCommand::BeginResize(
             viewport::ResizeDirection::SouthEast,
         ));
+    } else if right_bottom_corner_response.contains_pointer() {
+        ui.ctx().set_cursor_icon(CursorIcon::ResizeNwSe);
     }
-
-    right_bottom_corner_hover.on_hover_cursor(CursorIcon::ResizeNwSe);
 }

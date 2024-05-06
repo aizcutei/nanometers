@@ -28,6 +28,7 @@ pub struct Setting {
     pub oscilloscope: Oscilloscope,
     pub spectrum: Spectrum,
     pub sequence: Vec<Vec<ModuleList>>,
+    pub themelist: Vec<ThemeType>,
 }
 
 impl Default for Setting {
@@ -51,6 +52,7 @@ impl Default for Setting {
                 ],
                 vec![],
             ],
+            themelist: vec![ThemeType::Light, ThemeType::Dark, ThemeType::Custom],
         }
     }
 }
