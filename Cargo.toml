@@ -38,7 +38,7 @@ puffin = ["eframe/puffin", "dep:puffin", "dep:puffin_http"]
 
 
 [profile.release]
-opt-level = 2 # fast and small wasm
+opt-level = 3
 
 # Optimize all dependencies even in debug builds:
 [profile.dev.package."*"]

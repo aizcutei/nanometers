@@ -6,13 +6,12 @@ use rayon::prelude::*;
 
 impl NanometersApp {
     pub fn waveform_frame(&mut self, mut data: RawData, rect: eframe::epaint::Rect, ui: &mut Ui) {
-        let updata_speed = 280;
         ui.painter().rect_filled(rect, 0.0, self.setting.theme.bg);
 
         let last_data = self.waveform.data_buffer.clone();
         data.concat_front(last_data);
-        let rest = data.l.len() % updata_speed;
-        let len = data.l.len() / updata_speed;
+        let rest = data.l.len() % self.waveform.update_speed;
+        let len = data.l.len() / self.waveform.update_speed;
         self.waveform.data_buffer = data.split_index(data.l.len() - rest);
         let upper_rect = Rect::from_two_pos(rect.min, pos2(rect.max.x, rect.center().y));
         let lower_rect = Rect::from_two_pos(pos2(rect.min.x, rect.center().y), rect.max);
@@ -70,6 +69,7 @@ impl NanometersApp {
                 .take(self.waveform.update_speed)
                 .min_by(|x, y| x.total_cmp(*y))
                 .unwrap();
+            // println!("max: {}, min: {}", max, min);
             self.waveform
                 .plot_point
                 .uu
@@ -85,8 +85,14 @@ impl NanometersApp {
                 epaint::Shape::vline(
                     rect.max.x - i as f32,
                     Rangef::new(
-                        self.waveform.plot_point.uu.get(1920 - i),
-                        self.waveform.plot_point.ud.get(1920 - i),
+                        self.waveform
+                            .plot_point
+                            .uu
+                            .get(self.waveform.plot_point.len - i),
+                        self.waveform
+                            .plot_point
+                            .ud
+                            .get(self.waveform.plot_point.len - i),
                     ),
                     match self.setting.waveform.mode {
                         WaveformMode::Static => Stroke::new(1.0, self.setting.theme.main),
@@ -133,8 +139,14 @@ impl NanometersApp {
                 epaint::Shape::vline(
                     rect.max.x - i as f32,
                     Rangef::new(
-                        self.waveform.plot_point.du.get(1920 - i),
-                        self.waveform.plot_point.dd.get(1920 - i),
+                        self.waveform
+                            .plot_point
+                            .du
+                            .get(self.waveform.plot_point.len - i),
+                        self.waveform
+                            .plot_point
+                            .dd
+                            .get(self.waveform.plot_point.len - i),
                     ),
                     match self.setting.waveform.mode {
                         WaveformMode::Static => Stroke::new(1.0, self.setting.theme.main),

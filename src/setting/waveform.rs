@@ -1,4 +1,7 @@
+use std::collections::VecDeque;
+
 use crate::utils::*;
+use egui::Pos2;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -37,6 +40,7 @@ pub struct WaveformSetting {
 
 #[derive(Debug)]
 pub struct WaveformPlotPoint {
+    pub(crate) len: usize,
     pub(crate) uu: RingBuffer,
     pub(crate) ud: RingBuffer,
     pub(crate) du: RingBuffer,
@@ -46,6 +50,7 @@ pub struct WaveformPlotPoint {
 impl WaveformPlotPoint {
     pub fn new(size: usize) -> Self {
         Self {
+            len: size,
             uu: RingBuffer::new_with_default(size, 0.0),
             ud: RingBuffer::new_with_default(size, 0.0),
             du: RingBuffer::new_with_default(size, 0.0),
@@ -72,9 +77,9 @@ pub struct Waveform {
 impl Default for Waveform {
     fn default() -> Self {
         Self {
-            plot_point: WaveformPlotPoint::new(1920),
+            plot_point: WaveformPlotPoint::new(3840),
             data_buffer: RawData::new(),
-            update_speed: 280,
+            update_speed: 400,
         }
     }
 }

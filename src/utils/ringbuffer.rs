@@ -44,6 +44,10 @@ impl RingBuffer {
     pub fn get(&self, index: usize) -> f32 {
         self.buffer.get(index).unwrap_or(&0.0).clone()
     }
+
+    pub fn len(&self) -> usize {
+        self.buffer.len()
+    }
 }
 
 unsafe impl Send for RingBuffer {}

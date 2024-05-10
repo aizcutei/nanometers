@@ -3,6 +3,7 @@ use crate::setting;
 use crate::utils::*;
 use crate::AudioSource;
 use crate::NanometersApp;
+use egui::style::{Selection, WidgetVisuals, Widgets};
 use egui::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -259,7 +260,7 @@ impl NanometersApp {
         });
     }
 
-    pub fn device_sequence_block(&mut self, ui: &mut Ui) {
+    pub fn modules_sequence_block(&mut self, ui: &mut Ui) {
         // Sequence
         ui.group(|ui| {
             ui.vertical(|ui| {
@@ -271,7 +272,12 @@ impl NanometersApp {
                         let ui = &mut uis[col_idx];
                         let frame = Frame::default();
                         let (_, dropped_payload) = ui.dnd_drop_zone::<Location, ()>(frame, |ui| {
-                            ui.set_min_size(vec2(128.0, 90.0));
+                            ui.set_min_size(vec2(128.0, 100.0));
+                            ui.painter().rect_filled(
+                                ui.max_rect(),
+                                0.0,
+                                self.setting.theme.bgaccent,
+                            );
                             for (row_idx, item) in column.iter().enumerate() {
                                 let item_id = Id::new(("dnd", col_idx, row_idx));
                                 let item_location = Location {
@@ -408,7 +414,6 @@ impl NanometersApp {
 
     pub fn spectrum_setting_block(&mut self, ui: &mut Ui) {
         // Spectrum
-
         ui.group(|ui| {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
@@ -557,25 +562,207 @@ impl NanometersApp {
         });
     }
 
+    pub fn peak_setting_block(&mut self, ui: &mut Ui) {
+        ui.group(|ui| {
+            ui.vertical(|ui| {
+                ui.heading("Peak/LUFS");
+                ui.horizontal(|ui| {
+                    ui.label("Smooth");
+                    ui.add(egui::Slider::new(&mut self.setting.peak.smooth, 0.0..=1.0).text("s"));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Orientation");
+                    ui.selectable_value(
+                        &mut self.setting.peak.orientation,
+                        setting::PeakOrientation::V,
+                        "Vertical",
+                    );
+                    ui.selectable_value(
+                        &mut self.setting.peak.orientation,
+                        setting::PeakOrientation::H,
+                        "Horizontal",
+                    )
+                });
+            });
+        });
+    }
     pub fn theme_setting_block(&mut self, ui: &mut Ui) {
         // Theme
         ui.group(|ui| {
             ui.vertical(|ui| {
                 ui.heading("Theme");
                 ui.horizontal(|ui| {
-                    ui.label("Theme");
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::DARK_THEME, "Dark")
                         .changed()
                     {
                         self.setting.theme = setting::DARK_THEME;
+                        ui.ctx().set_visuals(Visuals {
+                            dark_mode: true,
+                            override_text_color: Some(self.setting.theme.text),
+                            selection: Selection {
+                                bg_fill: self.setting.theme.selection,
+                                stroke: Stroke::NONE,
+                            },
+                            widgets: Widgets {
+                                noninteractive: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bgaccent,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::new(1.0, self.setting.theme.frame),
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                inactive: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bgaccent,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                active: WidgetVisuals {
+                                    bg_fill: self.setting.theme.selection,
+                                    weak_bg_fill: self.setting.theme.selection,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                hovered: WidgetVisuals {
+                                    bg_fill: self.setting.theme.selection,
+                                    weak_bg_fill: self.setting.theme.selection,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::new(1.0, self.setting.theme.text),
+                                    expansion: 0.0,
+                                },
+                                open: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bg,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                            },
+                            ..Default::default()
+                        });
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::LIGHT_THEME, "Light")
                         .changed()
                     {
                         self.setting.theme = setting::LIGHT_THEME;
+                        ui.ctx().set_visuals(Visuals {
+                            dark_mode: false,
+                            override_text_color: Some(self.setting.theme.text),
+                            selection: Selection {
+                                bg_fill: self.setting.theme.selection,
+                                stroke: Stroke::NONE,
+                            },
+                            widgets: Widgets {
+                                noninteractive: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bgaccent,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::new(1.0, self.setting.theme.frame),
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                inactive: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bgaccent,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                active: WidgetVisuals {
+                                    bg_fill: self.setting.theme.selection,
+                                    weak_bg_fill: self.setting.theme.selection,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                hovered: WidgetVisuals {
+                                    bg_fill: self.setting.theme.selection,
+                                    weak_bg_fill: self.setting.theme.selection,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::new(1.0, self.setting.theme.text),
+                                    expansion: 0.0,
+                                },
+                                open: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bg,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                            },
+                            ..Default::default()
+                        });
                     };
+                    if ui
+                        .selectable_value(&mut self.setting.theme, setting::PINK_THEME, "Pink")
+                        .changed()
+                    {
+                        self.setting.theme = setting::PINK_THEME;
+                        ui.ctx().set_visuals(Visuals {
+                            dark_mode: false,
+                            override_text_color: Some(self.setting.theme.text),
+                            selection: Selection {
+                                bg_fill: self.setting.theme.selection,
+                                stroke: Stroke::NONE,
+                            },
+                            widgets: Widgets {
+                                noninteractive: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bgaccent,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::new(1.0, self.setting.theme.frame),
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                inactive: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bgaccent,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                active: WidgetVisuals {
+                                    bg_fill: self.setting.theme.selection,
+                                    weak_bg_fill: self.setting.theme.selection,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                                hovered: WidgetVisuals {
+                                    bg_fill: self.setting.theme.selection,
+                                    weak_bg_fill: self.setting.theme.selection,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::new(1.0, self.setting.theme.text),
+                                    expansion: 0.0,
+                                },
+                                open: WidgetVisuals {
+                                    bg_fill: self.setting.theme.bg,
+                                    weak_bg_fill: self.setting.theme.bgaccent,
+                                    bg_stroke: Stroke::NONE,
+                                    rounding: 0.0.into(),
+                                    fg_stroke: Stroke::NONE,
+                                    expansion: 0.0,
+                                },
+                            },
+                            ..Default::default()
+                        });
+                    }
                 });
             });
         });
