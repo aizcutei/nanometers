@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::default;
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StereogramMode {
@@ -25,7 +24,7 @@ pub enum StereogramPolarity {
 }
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize)]
-pub struct Stereogram {
+pub struct StereogramSetting {
     pub(crate) mode: StereogramMode,
     pub(crate) color: StereogramColor,
     pub(crate) polarity: StereogramPolarity,

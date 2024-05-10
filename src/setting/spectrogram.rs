@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::default;
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SpectrogramOrientation {
@@ -23,7 +22,7 @@ pub enum SpectrogramCurve {
 }
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize)]
-pub struct Spectrogram {
+pub struct SpectrogramSetting {
     pub(crate) orientation: SpectrogramOrientation,
     pub(crate) mode: SpectrogramMode,
     pub(crate) curve: SpectrogramCurve,

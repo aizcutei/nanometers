@@ -7,11 +7,13 @@ rust-version = "1.78"
 
 
 [dependencies]
-egui = "0.27.2"
+egui = {version = "0.27.2", features = ["rayon"]}
 eframe = { version = "0.27.2", default-features = false, features = [
     "default_fonts", 
+    "glow",
     "wgpu",
     "persistence",
+    "puffin",
 ] }
 serde = { version = "1", features = ["derive"] }
 cpal = {version = "0.15.3", exclude = ["js-sys"]}
@@ -24,7 +26,16 @@ anyhow = "1.0"
 rustfft = "6.2.0"
 ruhear = "0.1.0"
 log = "0.4"
+rayon = "1.10"
 crossbeam-channel = "0.5.12"
+puffin = { version = "0.19", optional = true }
+puffin_http = {version = "0.16", optional = true}
+
+[features]
+default = ["eframe/wgpu"]
+glow = ["eframe/glow"]
+puffin = ["eframe/puffin", "dep:puffin", "dep:puffin_http"]
+
 
 [profile.release]
 opt-level = 2 # fast and small wasm

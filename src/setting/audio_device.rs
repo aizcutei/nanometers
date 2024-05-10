@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::default;
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum AudioDevice {

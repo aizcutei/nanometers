@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::default;
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SpectrumSwitch {
@@ -41,7 +40,9 @@ pub enum SpectrumFreqLine {
 }
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize)]
-pub struct Spectrum {
+pub struct SpectrumSetting {
+    #[serde(skip)]
+    pub(crate) spectrum_switch: SpectrumSwitch,
     pub(crate) mode: SpectrumMode,
     pub(crate) smoothing: f64,
     pub(crate) slope: f64,

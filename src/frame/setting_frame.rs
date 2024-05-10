@@ -1,5 +1,6 @@
-use crate::audio::{plugin_client, system_capture, PluginClient, SystemCapture};
+use crate::audio::{PluginClient, SystemCapture};
 use crate::setting;
+use crate::utils::*;
 use crate::AudioSource;
 use crate::NanometersApp;
 use egui::*;
@@ -204,9 +205,16 @@ impl NanometersApp {
                     .changed()
                 {
                     self.audio_source.as_mut().unwrap().stop();
-                    let tx_lr = self.tx_lr.clone().unwrap();
-                    let callback = Box::new(move |data| {
-                        tx_lr.send(data).unwrap();
+                    let tx_lrms = self.tx_lrms.clone().unwrap();
+                    let callback = Box::new(move |data: Vec<Vec<f32>>| {
+                        let mut send_data = RawData::new();
+                        data[0].iter().zip(data[1].iter()).for_each(|(l, r)| {
+                            send_data.push_l(*l);
+                            send_data.push_r(*r);
+                            send_data.push_m((l + r) / 2.0);
+                            send_data.push_s((l - r) / 2.0);
+                        });
+                        tx_lrms.send(send_data).unwrap();
                     });
                     let mut system_capture = SystemCapture::new(callback);
                     system_capture.start();
@@ -221,9 +229,16 @@ impl NanometersApp {
                     .changed()
                 {
                     self.audio_source.as_mut().unwrap().stop();
-                    let tx_lr = self.tx_lr.clone().unwrap();
-                    let callback = Box::new(move |data| {
-                        tx_lr.send(data).unwrap();
+                    let tx_lrms = self.tx_lrms.clone().unwrap();
+                    let callback = Box::new(move |data: Vec<Vec<f32>>| {
+                        let mut send_data = RawData::new();
+                        data[0].iter().zip(data[1].iter()).for_each(|(l, r)| {
+                            send_data.push_l(*l);
+                            send_data.push_r(*r);
+                            send_data.push_m((l + r) / 2.0);
+                            send_data.push_s((l - r) / 2.0);
+                        });
+                        tx_lrms.send(send_data).unwrap();
                     });
                     let mut plugin_client = PluginClient::new(callback);
                     plugin_client.start();
@@ -399,23 +414,23 @@ impl NanometersApp {
                 ui.horizontal(|ui| {
                     ui.heading("Spectrum");
                     ui.selectable_value(
-                        &mut self.spectrum_switch,
+                        &mut self.setting.spectrum.spectrum_switch,
                         setting::SpectrumSwitch::Main,
                         "MAIN",
                     );
                     ui.selectable_value(
-                        &mut self.spectrum_switch,
+                        &mut self.setting.spectrum.spectrum_switch,
                         setting::SpectrumSwitch::Audio,
                         "AUDIO",
                     );
                     ui.selectable_value(
-                        &mut self.spectrum_switch,
+                        &mut self.setting.spectrum.spectrum_switch,
                         setting::SpectrumSwitch::Ref,
                         "REF",
                     );
                 });
 
-                match self.spectrum_switch {
+                match self.setting.spectrum.spectrum_switch {
                     setting::SpectrumSwitch::Main => {
                         ui.horizontal(|ui| {
                             ui.label("Mode");
@@ -538,6 +553,50 @@ impl NanometersApp {
                         });
                     }
                 }
+            });
+        });
+    }
+
+    pub fn theme_setting_block(&mut self, ui: &mut Ui) {
+        // Theme
+        ui.group(|ui| {
+            ui.vertical(|ui| {
+                ui.heading("Theme");
+                ui.horizontal(|ui| {
+                    ui.label("Theme");
+                    if ui
+                        .selectable_value(&mut self.setting.theme, setting::DARK_THEME, "Dark")
+                        .changed()
+                    {
+                        self.setting.theme = setting::DARK_THEME;
+                    };
+                    if ui
+                        .selectable_value(&mut self.setting.theme, setting::LIGHT_THEME, "Light")
+                        .changed()
+                    {
+                        self.setting.theme = setting::LIGHT_THEME;
+                    };
+                });
+            });
+        });
+    }
+
+    pub fn cpu_setting_block(&mut self, ui: &mut Ui) {
+        // CPU
+        ui.group(|ui| {
+            ui.vertical(|ui| {
+                ui.heading("CPU");
+                ui.horizontal(|ui| {
+                    ui.label("FPS");
+                    ui.label(format!("{:.1}", self.frame_history.fps()));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Mean Frame Time");
+                    ui.label(format!(
+                        "{:.1} ms",
+                        self.frame_history.mean_frame_time() * 1000.0
+                    ));
+                });
             });
         });
     }

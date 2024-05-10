@@ -1,20 +1,19 @@
-#![allow(dead_code)]
-use crate::audio::{plugin_client, system_capture, PluginClient, SystemCapture};
-use crate::frame;
-use crate::frame::setting_frame;
+#![allow(unused)]
+use crate::audio::*;
 use crate::frame::*;
-use crate::setting::waveform;
 use crate::setting::*;
-use crate::utils::rect_alloc;
+use crate::utils::*;
 use crate::AudioSource;
 use crate::RingBuffer;
+
 use crossbeam_channel::unbounded;
 use crossbeam_channel::{Receiver, Sender};
 use eframe::egui::{self, ViewportCommand};
 use eframe::wgpu::rwh::HasWindowHandle;
 use egui::*;
+use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{thread, vec};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -24,22 +23,16 @@ pub struct NanometersApp {
     pub(crate) audio_source: Option<Box<dyn AudioSource>>,
 
     #[serde(skip)]
-    raw_l: RingBuffer,
+    pub(crate) frame_history: FrameHistory,
 
     #[serde(skip)]
-    raw_r: RingBuffer,
+    pub(crate) tx_lrms: Option<Sender<RawData>>,
 
     #[serde(skip)]
-    pub(crate) tx_lr: Option<Sender<Vec<Vec<f32>>>>,
-
-    #[serde(skip)]
-    pub(crate) rx_lr: Option<Receiver<Vec<Vec<f32>>>>,
+    pub(crate) rx_lrms: Option<Receiver<RawData>>,
 
     #[serde(skip)]
     db: f64,
-
-    #[serde(skip)]
-    pub(crate) spectrum_switch: SpectrumSwitch,
 
     pub(crate) setting: Setting,
 
@@ -47,18 +40,26 @@ pub struct NanometersApp {
     allways_on_top: bool,
     meter_size: eframe::epaint::Rect,
     meters_rects: Vec<eframe::epaint::Rect>,
+
+    pub(crate) waveform: Waveform,
 }
 
 impl Default for NanometersApp {
     fn default() -> Self {
-        let raw_l = RingBuffer::new(240000);
-        let raw_r = RingBuffer::new(240000);
-
-        let (tx_lr, rx_lr) = unbounded();
-        let tx_lr_save = Some(tx_lr.clone());
-        let rx_lr_save = Some(rx_lr.clone());
+        let (tx_lrms, rx_lrms) = unbounded();
+        let tx_lrms_save = Some(tx_lrms.clone());
+        let rx_lrms_save = Some(rx_lrms.clone());
         let callback = Box::new(move |data: Vec<Vec<f32>>| {
-            tx_lr.send(data).unwrap();
+            #[cfg(feature = "puffin")]
+            puffin::profile_scope!("callback");
+            let mut send_data = RawData::new();
+            data[0].iter().zip(&data[1]).for_each(|(l, r)| {
+                send_data.push_l(*l);
+                send_data.push_r(*r);
+                send_data.push_m((l + r) / 2.0);
+                send_data.push_s((l - r) / 2.0);
+            });
+            tx_lrms.send(send_data).unwrap();
         });
 
         let mut system_capture = SystemCapture::new(callback);
@@ -67,17 +68,16 @@ impl Default for NanometersApp {
 
         Self {
             audio_source,
-            raw_l,
-            raw_r,
-            tx_lr: tx_lr_save,
-            rx_lr: rx_lr_save,
+            frame_history: Default::default(),
+            tx_lrms: tx_lrms_save,
+            rx_lrms: rx_lrms_save,
             db: 0.0,
-            spectrum_switch: SpectrumSwitch::Main,
             setting: Default::default(),
             setting_switch: false,
             allways_on_top: false,
             meter_size: Rect::from_two_pos([0.0, 0.0].into(), [600.0, 200.0].into()),
             meters_rects: vec![],
+            waveform: Default::default(),
         }
     }
 }
@@ -100,9 +100,10 @@ impl eframe::App for NanometersApp {
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        self.frame_history
+            .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
         self.main_frame(ctx);
-        ctx.request_repaint();
     }
 }
 
@@ -171,18 +172,20 @@ impl NanometersApp {
             );
         }
 
-        self.rx_lr.as_mut().unwrap().try_iter().for_each(|data| {
-            self.raw_l.push(data[0].clone());
-            self.raw_r.push(data[1].clone());
+        let mut update_data = RawData::new();
+        self.rx_lrms.as_mut().unwrap().try_iter().for_each(|data| {
+            update_data.extend_l(data.l.as_slice());
+            update_data.extend_r(data.r.as_slice());
+            update_data.extend_m(data.m.as_slice());
+            update_data.extend_s(data.s.as_slice());
         });
-        // println!("raw_l: {:?}", self.raw_l.index());
-        // println!("raw_r: {:?}", self.raw_r.index());
+        ui.ctx().request_repaint();
 
         for (i, meter) in self.setting.sequence[1].clone().iter().enumerate() {
             let mut meter_rect = self.meters_rects[i];
             match meter {
                 ModuleList::Waveform => {
-                    self.waveform_frame(meter_rect, ui);
+                    self.waveform_frame(update_data.clone(), meter_rect, ui);
                 }
                 ModuleList::Spectrogram => {
                     self.spectrogram_frame(meter_rect, ui);
@@ -228,12 +231,7 @@ impl NanometersApp {
             }
         }
 
-        let meters_response = ui.interact(
-            meters_rect,
-            Id::new("meters_buttons"),
-            // Sense::union(Sense::click(), Sense::click_and_drag()),
-            Sense::click(),
-        );
+        let meters_response = ui.interact(meters_rect, Id::new("meters_buttons"), Sense::click());
         if meters_response.is_pointer_button_down_on() {
             if ui.ctx().input(|key| key.key_pressed(Key::Space)) {
                 ui.ctx().send_viewport_cmd(ViewportCommand::StartDrag);
@@ -278,6 +276,9 @@ impl NanometersApp {
         let setting_layout = Layout::centered_and_justified(Direction::TopDown);
         let mut setting_area_ui = ui.child_ui(setting_rect, setting_layout);
 
+        ui.painter()
+            .rect_filled(setting_rect, 0.0, self.setting.theme.bg);
+
         setting_area_ui.vertical_centered_justified(|ui| {
             ui.separator();
             Grid::new("Setting_ui").show(ui, |ui| {
@@ -292,6 +293,8 @@ impl NanometersApp {
                 ui.end_row();
 
                 self.device_setting_block(ui);
+                self.theme_setting_block(ui);
+                self.cpu_setting_block(ui);
                 ui.end_row();
             });
 

@@ -20,27 +20,25 @@ pub use waveform::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Setting {
-    pub theme: Theme,
     pub audio_device: AudioDeviceSetting,
-    pub waveform: Waveform,
-    pub spectrogram: Spectrogram,
-    pub stereogram: Stereogram,
-    pub oscilloscope: Oscilloscope,
-    pub spectrum: Spectrum,
+    pub waveform: WaveformSetting,
+    pub spectrogram: SpectrogramSetting,
+    pub stereogram: StereogramSetting,
+    pub oscilloscope: OscilloscopeSetting,
+    pub spectrum: SpectrumSetting,
     pub sequence: Vec<Vec<ModuleList>>,
-    pub themelist: Vec<ThemeType>,
+    pub theme: Theme,
 }
 
 impl Default for Setting {
     fn default() -> Self {
         Self {
-            theme: Theme::default(),
             audio_device: AudioDeviceSetting::default(),
-            waveform: Waveform::default(),
-            spectrogram: Spectrogram::default(),
-            stereogram: Stereogram::default(),
-            oscilloscope: Oscilloscope::default(),
-            spectrum: Spectrum::default(),
+            waveform: WaveformSetting::default(),
+            spectrogram: SpectrogramSetting::default(),
+            stereogram: StereogramSetting::default(),
+            oscilloscope: OscilloscopeSetting::default(),
+            spectrum: SpectrumSetting::default(),
             sequence: vec![
                 vec![
                     ModuleList::Waveform,
@@ -52,7 +50,7 @@ impl Default for Setting {
                 ],
                 vec![],
             ],
-            themelist: vec![ThemeType::Light, ThemeType::Dark, ThemeType::Custom],
+            theme: DARK_THEME,
         }
     }
 }

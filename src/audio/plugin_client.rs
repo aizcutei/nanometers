@@ -64,7 +64,7 @@ impl AudioSource for PluginClient {
 
                 let mut conn = match LocalSocketStream::connect(name) {
                     Ok(conn) => conn,
-                    Err(e) => {
+                    Err(_e) => {
                         thread::sleep(Duration::from_millis(100));
                         continue;
                     }
