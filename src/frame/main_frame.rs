@@ -1,5 +1,5 @@
 use crate::NanometersApp;
-use crate::{setting::*, utils::*};
+use crate::{frame::*, setting::*, utils::*};
 use egui::*;
 
 impl NanometersApp {
@@ -32,7 +32,7 @@ impl NanometersApp {
                     self.meters_ui(ui, app_rect);
                 }
                 #[cfg(target_os = "windows")]
-                frame::resize_ui(ui, app_rect);
+                resize_ui(ui, app_rect);
             });
     }
 

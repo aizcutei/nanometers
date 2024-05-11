@@ -1,12 +1,24 @@
-# nanometers
+<p align=center>
+  <picture>
+    <img alt="nanometers" title="Nanometers" src="assets/icon-1024.png" width=200>
+  </picture>
+</p>
+
+# NanoMeters
 
 Crossplatform audio visualizer with Rust & WebGPU.
 
 A practice that mimics but not to replace the Minimeters.
 
-Under development. Unstable. Not ready for use. **Not responsible for loss of project files due to plugin crashes.**
+**Under development. Unstable. Not ready for use. Not responsible for loss of project files due to plugin crashes.**
 
 Use together with [nanometers-plugin](https://github.com/aizcutei/nanometers_plug) (VST3 & CLAP).
+
+---
+
+Preview:
+
+![nanometers](./static/Example.gif)
 
 ### Testing locally
 
