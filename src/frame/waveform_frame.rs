@@ -5,7 +5,7 @@ use egui::*;
 use rayon::prelude::*;
 
 impl NanometersApp {
-    pub fn waveform_frame(&mut self, mut data: RawData, rect: eframe::epaint::Rect, ui: &mut Ui) {
+    pub fn waveform_frame(&mut self, mut data: RawData, rect: Rect, ui: &mut Ui) {
         ui.painter().rect_filled(rect, 0.0, self.setting.theme.bg);
 
         let last_data = self.waveform.data_buffer.clone();
@@ -49,13 +49,7 @@ impl NanometersApp {
         }
     }
 
-    fn waveform_upper_channel_frame(
-        &mut self,
-        data: &[f32],
-        len: usize,
-        rect: eframe::epaint::Rect,
-        ui: &mut Ui,
-    ) {
+    fn waveform_upper_channel_frame(&mut self, data: &[f32], len: usize, rect: Rect, ui: &mut Ui) {
         for i in 0..len {
             let max = data
                 .par_iter()
@@ -104,13 +98,7 @@ impl NanometersApp {
         ui.painter().extend(shapes);
     }
 
-    fn waveform_lower_channel_frame(
-        &mut self,
-        data: &[f32],
-        len: usize,
-        rect: eframe::epaint::Rect,
-        ui: &mut Ui,
-    ) {
+    fn waveform_lower_channel_frame(&mut self, data: &[f32], len: usize, rect: Rect, ui: &mut Ui) {
         for i in 0..len {
             let max = data
                 .par_iter()

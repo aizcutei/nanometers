@@ -39,6 +39,7 @@ pub struct NanometersApp {
     pub(crate) meters_rects: Vec<eframe::epaint::Rect>,
 
     pub(crate) waveform: Waveform,
+    pub(crate) peak: Peak,
 }
 
 impl Default for NanometersApp {
@@ -74,6 +75,7 @@ impl Default for NanometersApp {
             meter_size: Rect::from_two_pos([0.0, 0.0].into(), [600.0, 200.0].into()),
             meters_rects: vec![],
             waveform: Default::default(),
+            peak: Default::default(),
         }
     }
 }

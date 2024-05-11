@@ -87,7 +87,7 @@ impl NanometersApp {
                     self.spectrogram_frame(meter_rect, ui);
                 }
                 ModuleList::Peak => {
-                    self.peak_frame(meter_rect, ui);
+                    self.peak_frame(&update_data, meter_rect, ui);
                 }
                 ModuleList::Oscilloscope => {
                     self.oscilloscope_frame(meter_rect, ui);

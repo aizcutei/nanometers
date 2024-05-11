@@ -80,10 +80,11 @@ impl AudioSource for PluginClient {
                             .collect::<Vec<f32>>();
                         let ring_buf_this_idx = buffer[0] as usize;
                         if ring_buf_this_idx > ring_buf_last_idx {
-                            update_buf = buffer[ring_buf_last_idx..ring_buf_this_idx].to_vec();
+                            update_buf =
+                                buffer[ring_buf_last_idx + 1..ring_buf_this_idx + 1].to_vec();
                         } else {
-                            update_buf = buffer[ring_buf_last_idx..].to_vec();
-                            update_buf.extend_from_slice(&buffer[..ring_buf_this_idx]);
+                            update_buf = buffer[ring_buf_last_idx + 1..].to_vec();
+                            update_buf.extend_from_slice(&buffer[1..ring_buf_this_idx + 1]);
                         }
                         ring_buf_last_idx = ring_buf_this_idx;
 

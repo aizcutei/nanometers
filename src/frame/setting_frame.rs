@@ -567,8 +567,8 @@ impl NanometersApp {
             ui.vertical(|ui| {
                 ui.heading("Peak/LUFS");
                 ui.horizontal(|ui| {
-                    ui.label("Smooth");
-                    ui.add(egui::Slider::new(&mut self.setting.peak.smooth, 0.0..=1.0).text("s"));
+                    ui.label("Decay");
+                    ui.add(egui::Slider::new(&mut self.setting.peak.decay, 0.0..=0.5).text("s"));
                 });
                 ui.horizontal(|ui| {
                     ui.label("Orientation");
