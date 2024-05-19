@@ -1,11 +1,10 @@
-use crate::AudioSource;
+use crate::audio::AudioSource;
 use ruhear::RUHear;
 use std::sync::{Arc, Mutex};
 
 pub struct SystemCapture {
     name: String,
     ruhear: RUHear,
-    callback: Arc<Mutex<dyn FnMut(Vec<Vec<f32>>) + Send>>,
 }
 
 impl SystemCapture {
@@ -13,11 +12,7 @@ impl SystemCapture {
         let name = "System Default Output".to_string();
         let callback = Arc::new(Mutex::new(callback));
         let ruhear = RUHear::new(callback.clone());
-        Self {
-            name,
-            ruhear,
-            callback,
-        }
+        Self { name, ruhear }
     }
 }
 

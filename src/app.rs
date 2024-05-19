@@ -3,12 +3,11 @@ use crate::audio::*;
 use crate::frame::*;
 use crate::setting::*;
 use crate::utils::*;
-use crate::AudioSource;
-use crate::RingBuffer;
 
 use crossbeam_channel::unbounded;
 use crossbeam_channel::{Receiver, Sender};
 use eframe::egui::{self, ViewportCommand};
+use eframe::wgpu::core::storage;
 use eframe::wgpu::rwh::HasWindowHandle;
 use egui::*;
 use rayon::prelude::*;
@@ -26,10 +25,15 @@ pub struct NanometersApp {
     pub(crate) frame_history: FrameHistory,
 
     #[serde(skip)]
-    pub(crate) tx_lrms: Option<Sender<RawData>>,
+    pub(crate) tx: Option<Sender<SendData>>,
 
     #[serde(skip)]
-    pub(crate) rx_lrms: Option<Receiver<RawData>>,
+    pub(crate) rx: Option<Receiver<SendData>>,
+
+    #[serde(skip)]
+    pub(crate) audio_source_buffer: Arc<Mutex<AudioSourceBuffer>>,
+
+    pub(crate) color_lut_129: Vec<Color32>,
 
     pub(crate) setting: Setting,
 
@@ -44,31 +48,20 @@ pub struct NanometersApp {
 
 impl Default for NanometersApp {
     fn default() -> Self {
-        let (tx_lrms, rx_lrms) = unbounded();
-        let tx_lrms_save = Some(tx_lrms.clone());
-        let rx_lrms_save = Some(rx_lrms.clone());
-        let callback = Box::new(move |data: Vec<Vec<f32>>| {
-            #[cfg(feature = "puffin")]
-            puffin::profile_scope!("callback");
-            let mut send_data = RawData::new();
-            data[0].iter().zip(&data[1]).for_each(|(l, r)| {
-                send_data.push_l(*l);
-                send_data.push_r(*r);
-                send_data.push_m((l + r) / 2.0);
-                send_data.push_s((l - r) / 2.0);
-            });
-            tx_lrms.send(send_data).unwrap();
-        });
-
-        let mut system_capture = SystemCapture::new(callback);
+        let (tx, rx) = unbounded();
+        let audio_source_buffer = Arc::new(Mutex::new(AudioSourceBuffer::new()));
+        let mut system_capture =
+            SystemCapture::new(get_callback(tx.clone(), audio_source_buffer.clone()));
         system_capture.start();
         let audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
 
         Self {
             audio_source,
             frame_history: Default::default(),
-            tx_lrms: tx_lrms_save,
-            rx_lrms: rx_lrms_save,
+            tx: Some(tx),
+            rx: Some(rx),
+            audio_source_buffer,
+            color_lut_129: color_lut_129(),
             setting: Default::default(),
             setting_switch: false,
             allways_on_top: false,
@@ -87,7 +80,12 @@ impl NanometersApp {
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
         if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+            let mut app: NanometersApp =
+                eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+            cc.egui_ctx.set_visuals(set_theme(&mut app));
+            // match app.setting.audio_device.device {}
+
+            return app;
         }
         Default::default()
     }

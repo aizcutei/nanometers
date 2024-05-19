@@ -2,14 +2,11 @@ use crate::setting::*;
 use crate::utils::*;
 use crate::NanometersApp;
 use egui::*;
-use rayon::iter::IntoParallelRefIterator;
-use rayon::iter::ParallelIterator;
-use rustfft::num_traits::Pow;
 
 impl NanometersApp {
-    pub fn peak_frame(&mut self, data: &RawData, rect: Rect, ui: &mut Ui) {
+    pub fn peak_frame(&mut self, iir_data: &IIRData, db_data: &DBData, rect: Rect, ui: &mut Ui) {
         ui.painter().rect_filled(rect, 0.0, self.setting.theme.bg);
-        if data.l.is_empty() || data.r.is_empty() {
+        if iir_data.l.is_empty() || iir_data.r.is_empty() {
             let l_rect = Rect::from_two_pos(
                 pos2(rect.center().x - 12.0, self.peak.plot_l),
                 pos2(rect.center().x - 7.0, rect.max.y),
@@ -23,36 +20,22 @@ impl NanometersApp {
             ui.painter()
                 .rect_filled(r_rect, 0.0, self.setting.theme.main);
         } else {
-            let average_l = (data
-                .l
-                .par_iter()
-                .fold(|| 0f32, |a, b| a + b.pow(2.0))
-                .sum::<f32>()
-                / data.l.len() as f32)
-                .sqrt();
-            let average_r = (data
-                .r
-                .par_iter()
-                .fold(|| 0f32, |a, b| a + b.pow(2.0))
-                .sum::<f32>()
-                / data.r.len() as f32)
-                .sqrt();
-
-            if average_l > self.peak.l || self.peak.l.is_nan() {
-                self.peak.l = average_l;
+            if db_data.l > self.peak.l || self.peak.l.is_nan() {
+                self.peak.l = db_data.l;
             } else {
                 self.peak.l = self.peak.l * self.setting.peak.decay
-                    + (1.0 - self.setting.peak.decay) * average_l;
+                    + (1.0 - self.setting.peak.decay) * db_data.l;
             }
 
-            if average_r > self.peak.r || self.peak.r.is_nan() {
-                self.peak.r = average_r;
+            if db_data.r > self.peak.r || self.peak.r.is_nan() {
+                self.peak.r = db_data.r;
             } else {
                 self.peak.r = self.peak.r * self.setting.peak.decay
-                    + (1.0 - self.setting.peak.decay) * average_r;
+                    + (1.0 - self.setting.peak.decay) * db_data.r;
             }
-            let l_height = -rect.height() * (gain_to_db(self.peak.l) / 60.0);
-            let r_height = -rect.height() * (gain_to_db(self.peak.r) / 60.0);
+
+            let l_height = -rect.height() * (db_data.l / 60.0);
+            let r_height = -rect.height() * (db_data.r / 60.0);
             self.peak.plot_l = l_height;
             self.peak.plot_r = r_height;
 
@@ -69,5 +52,45 @@ impl NanometersApp {
             ui.painter()
                 .rect_filled(r_rect, 0.0, self.setting.theme.main);
         }
+
+        // LUFS
+        if !iir_data.l.is_empty() && !iir_data.r.is_empty() {
+            let len = iir_data.l.len();
+            for i in 0..len {
+                self.peak.data_buffer_l.push_back(iir_data.l[i]);
+                self.peak.data_buffer_r.push_back(iir_data.r[i]);
+                if self.peak.data_buffer_l.len() >= 4 {
+                    let sigma = (self.peak.data_buffer_l.iter().sum::<f32>()
+                        + self.peak.data_buffer_r.iter().sum::<f32>())
+                        / 19200.0;
+                    if sigma.log10() * 10.0 - 0.691 > -70.0 {
+                        self.peak.past_3s.push_back(sigma);
+                    } else {
+                        self.peak.past_3s.push_back(0.0);
+                    }
+                    self.peak.past_3s.pop_front();
+                    self.peak.data_buffer_l.pop_front();
+                    self.peak.data_buffer_r.pop_front();
+                }
+            }
+        }
+        self.peak.lufs = self
+            .peak
+            .past_3s
+            .clone()
+            .into_iter()
+            .filter(|x| *x != 0.0)
+            .sum::<f32>()
+            .log10()
+            * 10.0
+            - 10.691;
+        // println!("{}", self.peak.lufs);
+        // ui.painter().text(
+        //     rect.center(),
+        //     Align2::CENTER_CENTER,
+        //     format!("{}", self.peak.lufs),
+        //     FontId::proportional(20.0),
+        //     Color32::WHITE,
+        // );
     }
 }

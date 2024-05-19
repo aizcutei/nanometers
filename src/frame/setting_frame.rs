@@ -1,7 +1,6 @@
-use crate::audio::{PluginClient, SystemCapture};
-use crate::setting;
+use crate::audio::*;
+use crate::setting::{self, set_theme};
 use crate::utils::*;
-use crate::AudioSource;
 use crate::NanometersApp;
 use egui::style::{Selection, WidgetVisuals, Widgets};
 use egui::*;
@@ -206,17 +205,8 @@ impl NanometersApp {
                     .changed()
                 {
                     self.audio_source.as_mut().unwrap().stop();
-                    let tx_lrms = self.tx_lrms.clone().unwrap();
-                    let callback = Box::new(move |data: Vec<Vec<f32>>| {
-                        let mut send_data = RawData::new();
-                        data[0].iter().zip(data[1].iter()).for_each(|(l, r)| {
-                            send_data.push_l(*l);
-                            send_data.push_r(*r);
-                            send_data.push_m((l + r) / 2.0);
-                            send_data.push_s((l - r) / 2.0);
-                        });
-                        tx_lrms.send(send_data).unwrap();
-                    });
+                    let tx_lrms = self.tx.clone().unwrap();
+                    let callback = get_callback(tx_lrms, self.audio_source_buffer.clone());
                     let mut system_capture = SystemCapture::new(callback);
                     system_capture.start();
                     self.audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
@@ -230,17 +220,8 @@ impl NanometersApp {
                     .changed()
                 {
                     self.audio_source.as_mut().unwrap().stop();
-                    let tx_lrms = self.tx_lrms.clone().unwrap();
-                    let callback = Box::new(move |data: Vec<Vec<f32>>| {
-                        let mut send_data = RawData::new();
-                        data[0].iter().zip(data[1].iter()).for_each(|(l, r)| {
-                            send_data.push_l(*l);
-                            send_data.push_r(*r);
-                            send_data.push_m((l + r) / 2.0);
-                            send_data.push_s((l - r) / 2.0);
-                        });
-                        tx_lrms.send(send_data).unwrap();
-                    });
+                    let tx_lrms = self.tx.clone().unwrap();
+                    let callback = get_callback(tx_lrms, self.audio_source_buffer.clone());
                     let mut plugin_client = PluginClient::new(callback);
                     plugin_client.start();
                     self.audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
@@ -597,171 +578,21 @@ impl NanometersApp {
                         .changed()
                     {
                         self.setting.theme = setting::DARK_THEME;
-                        ui.ctx().set_visuals(Visuals {
-                            dark_mode: true,
-                            override_text_color: Some(self.setting.theme.text),
-                            selection: Selection {
-                                bg_fill: self.setting.theme.selection,
-                                stroke: Stroke::NONE,
-                            },
-                            widgets: Widgets {
-                                noninteractive: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bgaccent,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::new(1.0, self.setting.theme.frame),
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                inactive: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bgaccent,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                active: WidgetVisuals {
-                                    bg_fill: self.setting.theme.selection,
-                                    weak_bg_fill: self.setting.theme.selection,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                hovered: WidgetVisuals {
-                                    bg_fill: self.setting.theme.selection,
-                                    weak_bg_fill: self.setting.theme.selection,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::new(1.0, self.setting.theme.text),
-                                    expansion: 0.0,
-                                },
-                                open: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bg,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                            },
-                            ..Default::default()
-                        });
+                        ui.ctx().set_visuals(set_theme(self));
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::LIGHT_THEME, "Light")
                         .changed()
                     {
                         self.setting.theme = setting::LIGHT_THEME;
-                        ui.ctx().set_visuals(Visuals {
-                            dark_mode: false,
-                            override_text_color: Some(self.setting.theme.text),
-                            selection: Selection {
-                                bg_fill: self.setting.theme.selection,
-                                stroke: Stroke::NONE,
-                            },
-                            widgets: Widgets {
-                                noninteractive: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bgaccent,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::new(1.0, self.setting.theme.frame),
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                inactive: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bgaccent,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                active: WidgetVisuals {
-                                    bg_fill: self.setting.theme.selection,
-                                    weak_bg_fill: self.setting.theme.selection,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                hovered: WidgetVisuals {
-                                    bg_fill: self.setting.theme.selection,
-                                    weak_bg_fill: self.setting.theme.selection,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::new(1.0, self.setting.theme.text),
-                                    expansion: 0.0,
-                                },
-                                open: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bg,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                            },
-                            ..Default::default()
-                        });
+                        ui.ctx().set_visuals(set_theme(self));
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::PINK_THEME, "Pink")
                         .changed()
                     {
                         self.setting.theme = setting::PINK_THEME;
-                        ui.ctx().set_visuals(Visuals {
-                            dark_mode: false,
-                            override_text_color: Some(self.setting.theme.text),
-                            selection: Selection {
-                                bg_fill: self.setting.theme.selection,
-                                stroke: Stroke::NONE,
-                            },
-                            widgets: Widgets {
-                                noninteractive: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bgaccent,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::new(1.0, self.setting.theme.frame),
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                inactive: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bgaccent,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                active: WidgetVisuals {
-                                    bg_fill: self.setting.theme.selection,
-                                    weak_bg_fill: self.setting.theme.selection,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                                hovered: WidgetVisuals {
-                                    bg_fill: self.setting.theme.selection,
-                                    weak_bg_fill: self.setting.theme.selection,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::new(1.0, self.setting.theme.text),
-                                    expansion: 0.0,
-                                },
-                                open: WidgetVisuals {
-                                    bg_fill: self.setting.theme.bg,
-                                    weak_bg_fill: self.setting.theme.bgaccent,
-                                    bg_stroke: Stroke::NONE,
-                                    rounding: 0.0.into(),
-                                    fg_stroke: Stroke::NONE,
-                                    expansion: 0.0,
-                                },
-                            },
-                            ..Default::default()
-                        });
+                        ui.ctx().set_visuals(set_theme(self));
                     }
                 });
             });

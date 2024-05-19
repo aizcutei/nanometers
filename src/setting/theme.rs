@@ -1,4 +1,6 @@
-use egui::Color32;
+use crate::NanometersApp;
+use egui::style::*;
+use egui::*;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
 pub struct Theme {
@@ -47,4 +49,58 @@ pub enum ThemeType {
     Dark,
     Pink,
     Custom,
+}
+
+pub fn set_theme(app: &mut NanometersApp) -> Visuals {
+    Visuals {
+        dark_mode: false,
+        override_text_color: Some(app.setting.theme.text),
+        selection: Selection {
+            bg_fill: app.setting.theme.selection,
+            stroke: Stroke::NONE,
+        },
+        widgets: Widgets {
+            noninteractive: WidgetVisuals {
+                bg_fill: app.setting.theme.bgaccent,
+                weak_bg_fill: app.setting.theme.bgaccent,
+                bg_stroke: Stroke::new(1.0, app.setting.theme.frame),
+                rounding: 0.0.into(),
+                fg_stroke: Stroke::NONE,
+                expansion: 0.0,
+            },
+            inactive: WidgetVisuals {
+                bg_fill: app.setting.theme.bgaccent,
+                weak_bg_fill: app.setting.theme.bgaccent,
+                bg_stroke: Stroke::NONE,
+                rounding: 0.0.into(),
+                fg_stroke: Stroke::NONE,
+                expansion: 0.0,
+            },
+            active: WidgetVisuals {
+                bg_fill: app.setting.theme.selection,
+                weak_bg_fill: app.setting.theme.selection,
+                bg_stroke: Stroke::NONE,
+                rounding: 0.0.into(),
+                fg_stroke: Stroke::NONE,
+                expansion: 0.0,
+            },
+            hovered: WidgetVisuals {
+                bg_fill: app.setting.theme.selection,
+                weak_bg_fill: app.setting.theme.selection,
+                bg_stroke: Stroke::NONE,
+                rounding: 0.0.into(),
+                fg_stroke: Stroke::new(1.0, app.setting.theme.text),
+                expansion: 0.0,
+            },
+            open: WidgetVisuals {
+                bg_fill: app.setting.theme.bg,
+                weak_bg_fill: app.setting.theme.bgaccent,
+                bg_stroke: Stroke::NONE,
+                rounding: 0.0.into(),
+                fg_stroke: Stroke::NONE,
+                expansion: 0.0,
+            },
+        },
+        ..Default::default()
+    }
 }

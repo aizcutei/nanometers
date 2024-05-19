@@ -67,27 +67,30 @@ impl NanometersApp {
             );
         }
 
-        let mut update_data = RawData::new();
-        self.rx_lrms.as_mut().unwrap().try_iter().for_each(|data| {
-            update_data.extend_l(data.l.as_slice());
-            update_data.extend_r(data.r.as_slice());
-            update_data.extend_m(data.m.as_slice());
-            update_data.extend_s(data.s.as_slice());
+        let mut update_waveform_data = WaveformSendData::new();
+        let mut update_iir_data = IIRData::new();
+        let mut update_db_data = DBData::new();
+
+        self.rx.as_mut().unwrap().try_iter().for_each(|data| {
+            update_iir_data.concat(&data.iir_data);
+            update_db_data.l = data.db_data.l;
+            update_db_data.r = data.db_data.r;
+            update_waveform_data.concat(&data.waveform_data);
         });
-        // println!("{:?}", update_data.l);
+
         ui.ctx().request_repaint();
 
         for (i, meter) in self.setting.sequence[1].clone().iter().enumerate() {
             let mut meter_rect = self.meters_rects[i];
             match meter {
                 ModuleList::Waveform => {
-                    self.waveform_frame(update_data.clone(), meter_rect, ui);
+                    self.waveform_frame(&update_waveform_data, meter_rect, ui);
                 }
                 ModuleList::Spectrogram => {
                     self.spectrogram_frame(meter_rect, ui);
                 }
                 ModuleList::Peak => {
-                    self.peak_frame(&update_data, meter_rect, ui);
+                    self.peak_frame(&update_iir_data, &update_db_data, meter_rect, ui);
                 }
                 ModuleList::Oscilloscope => {
                     self.oscilloscope_frame(meter_rect, ui);

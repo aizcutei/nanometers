@@ -1,3 +1,6 @@
+use crate::setting::*;
+use std::fmt::Display;
+
 #[derive(Debug, Clone, Default)]
 pub struct RawData {
     pub l: Vec<f32>,
@@ -5,7 +8,6 @@ pub struct RawData {
     pub m: Vec<f32>,
     pub s: Vec<f32>,
 }
-
 impl RawData {
     pub fn new() -> Self {
         Self {
@@ -44,36 +46,138 @@ impl RawData {
         self.m.clear();
         self.s.clear();
     }
+}
 
-    pub fn push_l(&mut self, value: f32) {
-        self.l.push(value);
+#[derive(Debug, Clone, Default)]
+pub struct IIRBuffer {
+    pub x_1: f32,
+    pub x_2: f32,
+    pub y_1: f32,
+    pub y_2: f32,
+    pub z_1: f32,
+    pub z_2: f32,
+}
+impl IIRBuffer {
+    pub fn new() -> Self {
+        Self {
+            x_1: 0.0,
+            x_2: 0.0,
+            y_1: 0.0,
+            y_2: 0.0,
+            z_1: 0.0,
+            z_2: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MAXMIN {
+    pub max: f32,
+    pub min: f32,
+}
+
+impl Display for MAXMIN {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "max: {}, min: {}", self.max, self.min)
+    }
+}
+
+impl MAXMIN {
+    pub fn new() -> Self {
+        Self {
+            max: f32::NEG_INFINITY,
+            min: f32::INFINITY,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PeakCalcBuffer {
+    pub index: usize,
+    pub iir_l: IIRBuffer,
+    pub iir_r: IIRBuffer,
+    pub sum_l: f32,
+    pub sum_r: f32,
+}
+
+impl PeakCalcBuffer {
+    pub fn new() -> Self {
+        Self {
+            index: 0,
+            iir_l: IIRBuffer::new(),
+            iir_r: IIRBuffer::new(),
+            sum_l: 0.0,
+            sum_r: 0.0,
+        }
     }
 
-    pub fn push_r(&mut self, value: f32) {
-        self.r.push(value);
+    pub fn reset_sum(&mut self) {
+        self.index = 0;
+        self.sum_l = 0.0;
+        self.sum_r = 0.0;
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct AudioSourceBuffer {
+    pub peak: PeakCalcBuffer,
+    pub waveform: WaveformCalcBuffer,
+}
+
+impl AudioSourceBuffer {
+    pub fn new() -> Self {
+        Self {
+            peak: PeakCalcBuffer::new(),
+            waveform: WaveformCalcBuffer::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct IIRData {
+    pub l: Vec<f32>,
+    pub r: Vec<f32>,
+}
+
+impl IIRData {
+    pub fn new() -> Self {
+        Self {
+            l: vec![],
+            r: vec![],
+        }
     }
 
-    pub fn push_m(&mut self, value: f32) {
-        self.m.push(value);
+    pub fn concat(&mut self, data: &IIRData) {
+        self.l.extend_from_slice(&data.l);
+        self.r.extend_from_slice(&data.r);
     }
+}
 
-    pub fn push_s(&mut self, value: f32) {
-        self.s.push(value);
+#[derive(Debug, Clone, Default)]
+pub struct DBData {
+    pub l: f32,
+    pub r: f32,
+}
+
+impl DBData {
+    pub fn new() -> Self {
+        Self { l: 0.0, r: 0.0 }
     }
+}
 
-    pub fn extend_l(&mut self, value: &[f32]) {
-        self.l.extend_from_slice(value);
-    }
+#[derive(Debug, Clone, Default)]
+pub struct SendData {
+    pub waveform_data: WaveformSendData,
+    pub iir_data: IIRData,
+    pub db_data: DBData,
+}
 
-    pub fn extend_r(&mut self, value: &[f32]) {
-        self.r.extend_from_slice(value);
-    }
-
-    pub fn extend_m(&mut self, value: &[f32]) {
-        self.m.extend_from_slice(value);
-    }
-
-    pub fn extend_s(&mut self, value: &[f32]) {
-        self.s.extend_from_slice(value);
+impl SendData {
+    pub fn new() -> Self {
+        Self {
+            waveform_data: WaveformSendData::new(),
+            iir_data: IIRData::new(),
+            db_data: DBData::new(),
+        }
     }
 }

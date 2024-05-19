@@ -1,4 +1,4 @@
-use crate::AudioSource;
+use crate::audio::AudioSource;
 use interprocess::local_socket::{LocalSocketStream, NameTypeSupport};
 use std::io::Read;
 use std::sync::mpsc;
@@ -69,7 +69,7 @@ impl AudioSource for PluginClient {
                         continue;
                     }
                 };
-                let mut update_buf: Vec<f32> = Vec::new();
+                let mut update_buf;
                 match conn.read(&mut buf) {
                     Ok(_) => {
                         let buffer = buf

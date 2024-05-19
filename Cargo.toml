@@ -9,21 +9,22 @@ rust-version = "1.78"
 [dependencies]
 egui = {version = "0.27.2", features = ["rayon"]}
 eframe = { version = "0.27.2", default-features = false, features = [
-    "default_fonts", 
+    "default_fonts",
     "glow",
     "wgpu",
     "persistence",
     "puffin",
 ] }
 serde = { version = "1", features = ["derive"] }
-cpal = {version = "0.15.3", exclude = ["js-sys"]}
 interprocess = "1.2.1"
 env_logger = { version = "0.11", default-features = false, features = [
     "auto-color",
     "humantime",
 ] }
+cpal = {version = "0.15.3", exclude = ["js-sys"]}
 anyhow = "1.0"
 rustfft = "6.2.0"
+realfft = "3.3.0"
 ruhear = "0.1.0"
 log = "0.4"
 rayon = "1.10"
