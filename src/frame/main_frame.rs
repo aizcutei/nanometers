@@ -68,11 +68,12 @@ impl NanometersApp {
         }
 
         let mut update_waveform_data = WaveformSendData::new();
-        let mut update_iir_data = IIRData::new();
+
+        let mut update_iir_data = Vec::new();
         let mut update_db_data = DBData::new();
 
         self.rx.as_mut().unwrap().try_iter().for_each(|data| {
-            update_iir_data.concat(&data.iir_data);
+            update_iir_data.extend_from_slice(&data.iir_data);
             update_db_data.l = data.db_data.l;
             update_db_data.r = data.db_data.r;
             update_waveform_data.concat(&data.waveform_data);

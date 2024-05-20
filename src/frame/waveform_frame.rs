@@ -84,7 +84,7 @@ impl NanometersApp {
                     match self.setting.waveform.mode {
                         WaveformMode::Static => Stroke::new(1.0, self.setting.theme.main),
                         WaveformMode::MultiBand => Stroke::new(
-                            1.0,
+                            1.1,
                             self.waveform
                                 .plot_point
                                 .ucolor
@@ -140,7 +140,7 @@ impl NanometersApp {
                     match self.setting.waveform.mode {
                         WaveformMode::Static => Stroke::new(1.0, self.setting.theme.main),
                         WaveformMode::MultiBand => Stroke::new(
-                            1.0,
+                            1.1,
                             self.waveform
                                 .plot_point
                                 .dcolor

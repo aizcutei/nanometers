@@ -57,6 +57,7 @@ pub struct IIRBuffer {
     pub z_1: f32,
     pub z_2: f32,
 }
+
 impl IIRBuffer {
     pub fn new() -> Self {
         Self {
@@ -92,12 +93,30 @@ impl MAXMIN {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct Multiband {
+    pub low: f32,
+    pub mid: f32,
+    pub high: f32,
+}
+
+impl Multiband {
+    pub fn new() -> Self {
+        Self {
+            low: 0.0,
+            mid: 0.0,
+            high: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct PeakCalcBuffer {
     pub index: usize,
     pub iir_l: IIRBuffer,
     pub iir_r: IIRBuffer,
     pub sum_l: f32,
     pub sum_r: f32,
+    pub sum: f32,
 }
 
 impl PeakCalcBuffer {
@@ -108,6 +127,7 @@ impl PeakCalcBuffer {
             iir_r: IIRBuffer::new(),
             sum_l: 0.0,
             sum_r: 0.0,
+            sum: 0.0,
         }
     }
 
@@ -115,6 +135,7 @@ impl PeakCalcBuffer {
         self.index = 0;
         self.sum_l = 0.0;
         self.sum_r = 0.0;
+        self.sum = 0.0;
     }
 }
 
@@ -134,41 +155,9 @@ impl AudioSourceBuffer {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct IIRData {
-    pub l: Vec<f32>,
-    pub r: Vec<f32>,
-}
-
-impl IIRData {
-    pub fn new() -> Self {
-        Self {
-            l: vec![],
-            r: vec![],
-        }
-    }
-
-    pub fn concat(&mut self, data: &IIRData) {
-        self.l.extend_from_slice(&data.l);
-        self.r.extend_from_slice(&data.r);
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct DBData {
-    pub l: f32,
-    pub r: f32,
-}
-
-impl DBData {
-    pub fn new() -> Self {
-        Self { l: 0.0, r: 0.0 }
-    }
-}
-
-#[derive(Debug, Clone, Default)]
 pub struct SendData {
     pub waveform_data: WaveformSendData,
-    pub iir_data: IIRData,
+    pub iir_data: Vec<f32>,
     pub db_data: DBData,
 }
 
@@ -176,7 +165,7 @@ impl SendData {
     pub fn new() -> Self {
         Self {
             waveform_data: WaveformSendData::new(),
-            iir_data: IIRData::new(),
+            iir_data: Vec::new(),
             db_data: DBData::new(),
         }
     }

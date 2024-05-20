@@ -83,8 +83,23 @@ impl NanometersApp {
             let mut app: NanometersApp =
                 eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
             cc.egui_ctx.set_visuals(set_theme(&mut app));
-            // match app.setting.audio_device.device {}
-
+            // match app.setting.audio_device.device {
+            //     SystemCapture => {
+            //         let tx = app.tx.clone().unwrap();
+            //         let callback = get_callback(tx, app.audio_source_buffer.clone());
+            //         let mut system_capture = SystemCapture::new(callback);
+            //         system_capture.start();
+            //         app.audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
+            //     }
+            //     PluginClient => {
+            //         let tx = app.tx.clone().unwrap();
+            //         let callback = get_callback(tx, app.audio_source_buffer.clone());
+            //         let mut plugin_client = PluginClient::new(callback);
+            //         plugin_client.start();
+            //         app.audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
+            //     }
+            //     _ => {}
+            // }
             return app;
         }
         Default::default()

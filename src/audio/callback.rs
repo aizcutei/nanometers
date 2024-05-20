@@ -8,7 +8,7 @@ use crossbeam_channel::Sender;
 // use std::sync::{Arc, Mutex};
 
 pub fn get_callback(
-    tx_lrms: Sender<SendData>,
+    tx: Sender<SendData>,
     buffer: Arc<Mutex<AudioSourceBuffer>>,
 ) -> Box<dyn FnMut(Vec<Vec<f32>>) + Send + Sync> {
     Box::new(move |data: Vec<Vec<f32>>| {
@@ -73,14 +73,12 @@ pub fn get_callback(
             //IIR
             let iir_l = combined_filter(data[0][i], &mut buffer.peak.iir_l);
             let iir_r = combined_filter(data[1][i], &mut buffer.peak.iir_r);
-            buffer.peak.sum_l += iir_l * iir_l;
-            buffer.peak.sum_r += iir_r * iir_r;
+            buffer.peak.sum += iir_l * iir_l + iir_r * iir_r;
             buffer.peak.index += 1;
             if buffer.peak.index >= 4800 {
                 let peak_buffer = buffer.peak.clone();
                 buffer.peak.reset_sum();
-                send_data.iir_data.l.push(peak_buffer.sum_l);
-                send_data.iir_data.r.push(peak_buffer.sum_r);
+                send_data.iir_data.push(peak_buffer.sum / 4800.0);
             }
         }
 
@@ -90,7 +88,7 @@ pub fn get_callback(
         send_data.db_data.l = gain_to_db(amp_l);
         send_data.db_data.r = gain_to_db(amp_r);
 
-        tx_lrms.send(send_data).unwrap();
+        tx.send(send_data).unwrap();
     })
 }
 

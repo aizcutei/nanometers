@@ -22,11 +22,9 @@ pub struct Peak {
     pub(crate) plot_r: f32,
     pub(crate) lufs: f32,
     #[serde(skip)]
-    pub(crate) past_3s: VecDeque<f32>,
+    pub(crate) past_1500ms: VecDeque<f32>,
     #[serde(skip)]
-    pub(crate) data_buffer_l: VecDeque<f32>,
-    #[serde(skip)]
-    pub(crate) data_buffer_r: VecDeque<f32>,
+    pub(crate) data_buffer: VecDeque<f32>,
 }
 
 impl Default for Peak {
@@ -37,9 +35,23 @@ impl Default for Peak {
             plot_l: 0.0,
             plot_r: 0.0,
             lufs: f32::NEG_INFINITY,
-            past_3s: vec![f32::NEG_INFINITY; 27].into(), //3000ms, 400ms per block, overlap 75%
-            data_buffer_l: VecDeque::new(),
-            data_buffer_r: VecDeque::new(),
+            past_1500ms: VecDeque::new(), //1500ms, 400ms per block, overlap 75%
+            data_buffer: VecDeque::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct DBData {
+    pub l: f32,
+    pub r: f32,
+}
+
+impl DBData {
+    pub fn new() -> Self {
+        Self {
+            l: f32::NEG_INFINITY,
+            r: f32::NEG_INFINITY,
         }
     }
 }
