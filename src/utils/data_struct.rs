@@ -1,3 +1,5 @@
+use egui::Pos2;
+
 use crate::setting::*;
 use std::fmt::Display;
 
@@ -49,29 +51,6 @@ impl RawData {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct IIRBuffer {
-    pub x_1: f32,
-    pub x_2: f32,
-    pub y_1: f32,
-    pub y_2: f32,
-    pub z_1: f32,
-    pub z_2: f32,
-}
-
-impl IIRBuffer {
-    pub fn new() -> Self {
-        Self {
-            x_1: 0.0,
-            x_2: 0.0,
-            y_1: 0.0,
-            y_2: 0.0,
-            z_1: 0.0,
-            z_2: 0.0,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Default)]
 pub struct MAXMIN {
     pub max: f32,
     pub min: f32,
@@ -110,32 +89,41 @@ impl Multiband {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct PeakCalcBuffer {
-    pub index: usize,
-    pub iir_l: IIRBuffer,
-    pub iir_r: IIRBuffer,
-    pub sum_l: f32,
-    pub sum_r: f32,
-    pub sum: f32,
+pub struct StereoSendData {
+    pub max: f32,
+    pub lissa: Vec<Pos2>,
+    pub log: Vec<Pos2>,
+    pub linear: Vec<Pos2>,
 }
 
-impl PeakCalcBuffer {
+impl StereoSendData {
+    pub fn new() -> Self {
+        Self {
+            max: f32::NEG_INFINITY,
+            lissa: Vec::new(),
+            log: Vec::new(),
+            linear: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct StereoCalcBuffer {
+    pub index: usize,
+    pub max: f32,
+}
+
+impl StereoCalcBuffer {
     pub fn new() -> Self {
         Self {
             index: 0,
-            iir_l: IIRBuffer::new(),
-            iir_r: IIRBuffer::new(),
-            sum_l: 0.0,
-            sum_r: 0.0,
-            sum: 0.0,
+            max: f32::NEG_INFINITY,
         }
     }
 
-    pub fn reset_sum(&mut self) {
-        self.index = 0;
-        self.sum_l = 0.0;
-        self.sum_r = 0.0;
-        self.sum = 0.0;
+    pub fn update(&mut self, l: f32, r: f32) {
+        self.index += 1;
+        self.max = self.max.max(l.abs()).max(r.abs());
     }
 }
 
@@ -143,6 +131,7 @@ impl PeakCalcBuffer {
 pub struct AudioSourceBuffer {
     pub peak: PeakCalcBuffer,
     pub waveform: WaveformCalcBuffer,
+    pub stereo: StereoCalcBuffer,
 }
 
 impl AudioSourceBuffer {
@@ -150,6 +139,7 @@ impl AudioSourceBuffer {
         Self {
             peak: PeakCalcBuffer::new(),
             waveform: WaveformCalcBuffer::new(),
+            stereo: StereoCalcBuffer::new(),
         }
     }
 }
@@ -159,6 +149,7 @@ pub struct SendData {
     pub waveform_data: WaveformSendData,
     pub iir_data: Vec<f32>,
     pub db_data: DBData,
+    pub stereo_data: StereoSendData,
 }
 
 impl SendData {
@@ -167,6 +158,7 @@ impl SendData {
             waveform_data: WaveformSendData::new(),
             iir_data: Vec::new(),
             db_data: DBData::new(),
+            stereo_data: StereoSendData::new(),
         }
     }
 }

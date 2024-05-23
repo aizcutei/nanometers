@@ -68,7 +68,7 @@ impl NanometersApp {
         }
 
         let mut update_waveform_data = WaveformSendData::new();
-
+        let mut update_stereogram_data = StereoSendData::new();
         let mut update_iir_data = Vec::new();
         let mut update_db_data = DBData::new();
 
@@ -76,6 +76,16 @@ impl NanometersApp {
             update_iir_data.extend_from_slice(&data.iir_data);
             update_db_data.l = data.db_data.l;
             update_db_data.r = data.db_data.r;
+            update_stereogram_data.max = data.stereo_data.max;
+            update_stereogram_data
+                .lissa
+                .extend_from_slice(&data.stereo_data.lissa);
+            update_stereogram_data
+                .linear
+                .extend_from_slice(&data.stereo_data.linear);
+            update_stereogram_data
+                .log
+                .extend_from_slice(&data.stereo_data.log);
             update_waveform_data.concat(&data.waveform_data);
         });
 
@@ -100,7 +110,7 @@ impl NanometersApp {
                     self.spectrum_frame(meter_rect, ui);
                 }
                 ModuleList::Stereogram => {
-                    self.stereogram_frame(meter_rect, ui);
+                    self.stereogram_frame(&update_stereogram_data, meter_rect, ui);
                 }
             }
         }
@@ -195,7 +205,6 @@ impl NanometersApp {
 
                 self.device_setting_block(ui);
                 self.theme_setting_block(ui);
-                self.peak_setting_block(ui);
                 self.cpu_setting_block(ui);
                 ui.end_row();
             });

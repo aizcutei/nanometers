@@ -1,3 +1,21 @@
+pub fn multiband_color(data: Vec<f32>) -> egui::Color32 {
+    let low_size = 3;
+    let mid_size = 5;
+    let high_size = data.len() - low_size - mid_size;
+    let low = data.iter().take(low_size).sum::<f32>() * 256.0 / low_size as f32;
+    let mid =
+        data.iter().skip(low_size).take(mid_size).sum::<f32>() * 256.0 * 0.9 / mid_size as f32;
+    let high = data
+        .iter()
+        .skip(low_size + mid_size)
+        .take(high_size)
+        .sum::<f32>()
+        * 256.0
+        * 0.7
+        / high_size as f32;
+    egui::Color32::from_rgb(low as u8, mid as u8, high as u8)
+}
+
 pub fn color_lut_129() -> Vec<egui::Color32> {
     (0..129)
         .into_iter()

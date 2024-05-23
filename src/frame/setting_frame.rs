@@ -543,30 +543,6 @@ impl NanometersApp {
         });
     }
 
-    pub fn peak_setting_block(&mut self, ui: &mut Ui) {
-        ui.group(|ui| {
-            ui.vertical(|ui| {
-                ui.heading("Peak/LUFS");
-                ui.horizontal(|ui| {
-                    ui.label("Decay");
-                    ui.add(egui::Slider::new(&mut self.setting.peak.decay, 0.0..=0.5).text("s"));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Orientation");
-                    ui.selectable_value(
-                        &mut self.setting.peak.orientation,
-                        setting::PeakOrientation::V,
-                        "Vertical",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.peak.orientation,
-                        setting::PeakOrientation::H,
-                        "Horizontal",
-                    )
-                });
-            });
-        });
-    }
     pub fn theme_setting_block(&mut self, ui: &mut Ui) {
         // Theme
         ui.group(|ui| {

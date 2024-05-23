@@ -11,6 +11,7 @@ use eframe::wgpu::core::storage;
 use eframe::wgpu::rwh::HasWindowHandle;
 use egui::*;
 use rayon::prelude::*;
+use std::sync::atomic::AtomicU32;
 use std::sync::{Arc, Mutex};
 use std::{thread, vec};
 
@@ -20,22 +21,25 @@ use std::{thread, vec};
 pub struct NanometersApp {
     #[serde(skip)]
     pub(crate) audio_source: Option<Box<dyn AudioSource>>,
-
     #[serde(skip)]
     pub(crate) frame_history: FrameHistory,
 
     #[serde(skip)]
     pub(crate) tx: Option<Sender<SendData>>,
-
     #[serde(skip)]
     pub(crate) rx: Option<Receiver<SendData>>,
 
+    // #[serde(skip)]
+    // pub(crate) tx_setting: Option<Sender<AudioSourceSetting>>,
+    // #[serde(skip)]
+    // pub(crate) rx_setting: Option<Receiver<AudioSourceSetting>>,
     #[serde(skip)]
     pub(crate) audio_source_buffer: Arc<Mutex<AudioSourceBuffer>>,
-
-    pub(crate) color_lut_129: Vec<Color32>,
+    #[serde(skip)]
+    pub(crate) audio_source_setting: Arc<Mutex<Setting>>,
 
     pub(crate) setting: Setting,
+    pub(crate) sample_rate: AtomicU32,
 
     pub(crate) setting_switch: bool,
     pub(crate) allways_on_top: bool,
@@ -44,12 +48,16 @@ pub struct NanometersApp {
 
     pub(crate) waveform: Waveform,
     pub(crate) peak: Peak,
+    pub(crate) stereo: Stereo,
 }
 
 impl Default for NanometersApp {
     fn default() -> Self {
         let (tx, rx) = unbounded();
+        // let (tx_setting, rx_setting) = unbounded();
         let audio_source_buffer = Arc::new(Mutex::new(AudioSourceBuffer::new()));
+        let setting = Setting::default();
+        let audio_source_setting = Arc::new(Mutex::new(setting.clone()));
         let mut system_capture =
             SystemCapture::new(get_callback(tx.clone(), audio_source_buffer.clone()));
         system_capture.start();
@@ -60,15 +68,19 @@ impl Default for NanometersApp {
             frame_history: Default::default(),
             tx: Some(tx),
             rx: Some(rx),
+            // tx_setting: Some(tx_setting),
+            // rx_setting: Some(rx_setting),
             audio_source_buffer,
-            color_lut_129: color_lut_129(),
-            setting: Default::default(),
+            audio_source_setting,
+            setting,
+            sample_rate: AtomicU32::new(48000),
             setting_switch: false,
             allways_on_top: false,
             meter_size: Rect::from_two_pos([0.0, 0.0].into(), [600.0, 200.0].into()),
             meters_rects: vec![],
             waveform: Default::default(),
             peak: Default::default(),
+            stereo: Default::default(),
         }
     }
 }
@@ -78,28 +90,30 @@ impl NanometersApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
+        let version = env!("CARGO_PKG_VERSION").to_string();
 
         if let Some(storage) = cc.storage {
             let mut app: NanometersApp =
                 eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
             cc.egui_ctx.set_visuals(set_theme(&mut app));
-            // match app.setting.audio_device.device {
-            //     SystemCapture => {
-            //         let tx = app.tx.clone().unwrap();
-            //         let callback = get_callback(tx, app.audio_source_buffer.clone());
-            //         let mut system_capture = SystemCapture::new(callback);
-            //         system_capture.start();
-            //         app.audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
-            //     }
-            //     PluginClient => {
-            //         let tx = app.tx.clone().unwrap();
-            //         let callback = get_callback(tx, app.audio_source_buffer.clone());
-            //         let mut plugin_client = PluginClient::new(callback);
-            //         plugin_client.start();
-            //         app.audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
-            //     }
-            //     _ => {}
-            // }
+            match app.setting.audio_device.device {
+                AudioDevice::OutputCapture => {
+                    let tx = app.tx.clone().unwrap();
+                    let callback = get_callback(tx, app.audio_source_buffer.clone());
+                    let mut system_capture = SystemCapture::new(callback);
+                    system_capture.start();
+                    app.audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
+                }
+                AudioDevice::PluginCapture => {
+                    let tx = app.tx.clone().unwrap();
+                    let callback = get_callback(tx, app.audio_source_buffer.clone());
+                    let mut plugin_client = PluginClient::new(callback);
+                    plugin_client.start();
+                    app.audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
+                }
+                _ => {}
+            }
+            app.audio_source_setting = Arc::new(Mutex::new(app.setting.clone()));
             return app;
         }
         Default::default()

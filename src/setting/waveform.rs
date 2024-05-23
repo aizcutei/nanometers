@@ -1,7 +1,6 @@
-use std::collections::VecDeque;
-
 use crate::utils::*;
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum WaveformMode {
@@ -145,6 +144,10 @@ pub struct WaveformSendData {
     pub r_freq: Vec<usize>,
     pub m_freq: Vec<usize>,
     pub s_freq: Vec<usize>,
+    pub l_color: Vec<egui::Color32>,
+    pub r_color: Vec<egui::Color32>,
+    pub m_color: Vec<egui::Color32>,
+    pub s_color: Vec<egui::Color32>,
 }
 
 impl WaveformSendData {
@@ -158,6 +161,10 @@ impl WaveformSendData {
             r_freq: vec![],
             m_freq: vec![],
             s_freq: vec![],
+            l_color: vec![],
+            r_color: vec![],
+            m_color: vec![],
+            s_color: vec![],
         }
     }
     pub fn concat(&mut self, data: &WaveformSendData) {
@@ -169,5 +176,9 @@ impl WaveformSendData {
         self.r_freq.extend_from_slice(&data.r_freq);
         self.m_freq.extend_from_slice(&data.m_freq);
         self.s_freq.extend_from_slice(&data.s_freq);
+        self.l_color.extend_from_slice(&data.l_color);
+        self.r_color.extend_from_slice(&data.r_color);
+        self.m_color.extend_from_slice(&data.m_color);
+        self.s_color.extend_from_slice(&data.s_color);
     }
 }

@@ -13,32 +13,32 @@ impl NanometersApp {
         match self.setting.waveform.channel_1 {
             WaveformChannel::None => {}
             WaveformChannel::Left => {
-                self.waveform_upper_channel_frame(&data.l, &data.l_freq, upper_rect, ui);
+                self.waveform_upper_channel_frame(&data.l, &data.l_color, upper_rect, ui);
             }
             WaveformChannel::Right => {
-                self.waveform_upper_channel_frame(&data.r, &data.r_freq, upper_rect, ui);
+                self.waveform_upper_channel_frame(&data.r, &data.r_color, upper_rect, ui);
             }
             WaveformChannel::Mid => {
-                self.waveform_upper_channel_frame(&data.m, &data.m_freq, upper_rect, ui);
+                self.waveform_upper_channel_frame(&data.m, &data.m_color, upper_rect, ui);
             }
             WaveformChannel::Side => {
-                self.waveform_upper_channel_frame(&data.s, &data.s_freq, upper_rect, ui);
+                self.waveform_upper_channel_frame(&data.s, &data.s_color, upper_rect, ui);
             }
         }
 
         match self.setting.waveform.channel_2 {
             WaveformChannel::None => {}
             WaveformChannel::Left => {
-                self.waveform_lower_channel_frame(&data.l, &data.l_freq, lower_rect, ui);
+                self.waveform_lower_channel_frame(&data.l, &data.l_color, lower_rect, ui);
             }
             WaveformChannel::Right => {
-                self.waveform_lower_channel_frame(&data.r, &data.r_freq, lower_rect, ui);
+                self.waveform_lower_channel_frame(&data.r, &data.r_color, lower_rect, ui);
             }
             WaveformChannel::Mid => {
-                self.waveform_lower_channel_frame(&data.m, &data.m_freq, lower_rect, ui);
+                self.waveform_lower_channel_frame(&data.m, &data.m_color, lower_rect, ui);
             }
             WaveformChannel::Side => {
-                self.waveform_lower_channel_frame(&data.s, &data.s_freq, lower_rect, ui);
+                self.waveform_lower_channel_frame(&data.s, &data.s_color, lower_rect, ui);
             }
         }
     }
@@ -46,7 +46,7 @@ impl NanometersApp {
     fn waveform_upper_channel_frame(
         &mut self,
         data: &[MAXMIN],
-        color: &[usize],
+        color: &[Color32],
         rect: Rect,
         ui: &mut Ui,
     ) {
@@ -65,10 +65,7 @@ impl NanometersApp {
                     .plot_point
                     .ud
                     .push_back(rect.center().y - rect.height() * v.min / 2.0);
-                self.waveform
-                    .plot_point
-                    .ucolor
-                    .push_back(self.color_lut_129[*c]);
+                self.waveform.plot_point.ucolor.push_back(*c);
             });
         }
         let len = self.waveform.plot_point.uu.len();
@@ -82,7 +79,7 @@ impl NanometersApp {
                         *self.waveform.plot_point.ud.get(len - i).unwrap_or(&0.0),
                     ),
                     match self.setting.waveform.mode {
-                        WaveformMode::Static => Stroke::new(1.0, self.setting.theme.main),
+                        WaveformMode::Static => Stroke::new(1.5, self.setting.theme.main),
                         WaveformMode::MultiBand => Stroke::new(
                             1.1,
                             self.waveform
@@ -102,7 +99,7 @@ impl NanometersApp {
     fn waveform_lower_channel_frame(
         &mut self,
         data: &[MAXMIN],
-        color: &[usize],
+        color: &[Color32],
         rect: Rect,
         ui: &mut Ui,
     ) {
@@ -121,10 +118,7 @@ impl NanometersApp {
                     .plot_point
                     .dd
                     .push_back(rect.center().y - rect.height() * v.min / 2.0);
-                self.waveform
-                    .plot_point
-                    .dcolor
-                    .push_back(self.color_lut_129[*c]);
+                self.waveform.plot_point.dcolor.push_back(*c);
             });
         }
         let len = self.waveform.plot_point.du.len();
@@ -138,7 +132,7 @@ impl NanometersApp {
                         *self.waveform.plot_point.dd.get(len - i).unwrap_or(&0.0),
                     ),
                     match self.setting.waveform.mode {
-                        WaveformMode::Static => Stroke::new(1.0, self.setting.theme.main),
+                        WaveformMode::Static => Stroke::new(1.5, self.setting.theme.main),
                         WaveformMode::MultiBand => Stroke::new(
                             1.1,
                             self.waveform

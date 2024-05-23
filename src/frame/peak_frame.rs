@@ -24,15 +24,13 @@ impl NanometersApp {
             if db_data.l > self.peak.l || self.peak.l.is_nan() {
                 self.peak.l = db_data.l;
             } else {
-                self.peak.l = self.peak.l * self.setting.peak.decay
-                    + (1.0 - self.setting.peak.decay) * db_data.l;
+                self.peak.l = self.peak.l * 0.99 + 0.01 * db_data.l;
             }
 
             if db_data.r > self.peak.r || self.peak.r.is_nan() {
                 self.peak.r = db_data.r;
             } else {
-                self.peak.r = self.peak.r * self.setting.peak.decay
-                    + (1.0 - self.setting.peak.decay) * db_data.r;
+                self.peak.r = self.peak.r * 0.99 + 0.01 * db_data.r;
             }
 
             let l_height = -rect.height() * (db_data.l / 60.0) - 5.0;
@@ -47,6 +45,16 @@ impl NanometersApp {
             let r_rect = Rect::from_two_pos(
                 pos2(rect.center().x - 33.0, r_height),
                 pos2(rect.center().x - 27.0, rect.max.y),
+            );
+            ui.painter().hline(
+                (rect.center().x - 40.0)..=(rect.center().x - 34.0),
+                -rect.height() * (self.peak.l / 60.0) - 5.0,
+                Stroke::new(1.0, self.setting.theme.main),
+            );
+            ui.painter().hline(
+                (rect.center().x - 33.0)..=(rect.center().x - 27.0),
+                -rect.height() * (self.peak.r / 60.0) - 5.0,
+                Stroke::new(1.0, self.setting.theme.main),
             );
             ui.painter()
                 .rect_filled(l_rect, 0.0, self.setting.theme.main);

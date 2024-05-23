@@ -1,4 +1,4 @@
-use super::*;
+use crate::setting::*;
 
 pub const SHELVING_A1: f32 = -1.69065929318241;
 pub const SHELVING_A2: f32 = 0.73248077421585;

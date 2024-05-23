@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 pub(crate) mod audio_device;
+pub(crate) mod audio_source;
 pub(crate) mod module;
 pub(crate) mod oscilloscope;
 pub(crate) mod peak;
@@ -11,6 +12,7 @@ pub(crate) mod theme;
 pub(crate) mod waveform;
 
 pub use audio_device::*;
+pub use audio_source::*;
 pub use module::*;
 pub use oscilloscope::*;
 pub use peak::*;
@@ -29,7 +31,7 @@ pub struct Setting {
     pub oscilloscope: OscilloscopeSetting,
     pub spectrum: SpectrumSetting,
     pub sequence: Vec<Vec<ModuleList>>,
-    pub peak: PeakSetting,
+
     pub theme: Theme,
 }
 
@@ -42,7 +44,7 @@ impl Default for Setting {
             stereogram: StereogramSetting::default(),
             oscilloscope: OscilloscopeSetting::default(),
             spectrum: SpectrumSetting::default(),
-            peak: PeakSetting::default(),
+
             sequence: vec![
                 vec![
                     ModuleList::Waveform,
