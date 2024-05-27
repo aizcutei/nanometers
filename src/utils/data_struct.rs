@@ -1,6 +1,6 @@
-use egui::Pos2;
-
 use crate::setting::*;
+use dasp::*;
+use egui::Pos2;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, Default)]
@@ -20,26 +20,36 @@ impl RawData {
         }
     }
 
-    pub fn concat(&mut self, data: RawData) {
-        self.l.extend(data.l);
-        self.r.extend(data.r);
-        self.m.extend(data.m);
-        self.s.extend(data.s);
-    }
+    // pub fn concat(&mut self, data: RawData) {
+    //     self.l.extend(data.l);
+    //     self.r.extend(data.r);
+    //     self.m.extend(data.m);
+    //     self.s.extend(data.s);
+    // }
 
-    pub fn concat_front(&mut self, data: RawData) {
-        self.l.splice(0..0, data.l);
-        self.r.splice(0..0, data.r);
-        self.m.splice(0..0, data.m);
-        self.s.splice(0..0, data.s);
-    }
+    // pub fn concat_front(&mut self, data: RawData) {
+    //     self.l.splice(0..0, data.l);
+    //     self.r.splice(0..0, data.r);
+    //     self.m.splice(0..0, data.m);
+    //     self.s.splice(0..0, data.s);
+    // }
 
-    pub fn split_index(&self, index: usize) -> RawData {
-        let l = self.l[index..].to_vec();
-        let r = self.r[index..].to_vec();
-        let m = self.m[index..].to_vec();
-        let s = self.s[index..].to_vec();
-        RawData { l, r, m, s }
+    // pub fn split_index(&self, index: usize) -> RawData {
+    //     let l = self.l[index..].to_vec();
+    //     let r = self.r[index..].to_vec();
+    //     let m = self.m[index..].to_vec();
+    //     let s = self.s[index..].to_vec();
+    //     RawData { l, r, m, s }
+    // }
+
+    pub fn keep_last(&mut self, size: usize) {
+        let len = self.l.len();
+        if len > size {
+            self.l.drain(0..len - size);
+            self.r.drain(0..len - size);
+            self.m.drain(0..len - size);
+            self.s.drain(0..len - size);
+        }
     }
 
     pub fn clear(&mut self) {
@@ -72,18 +82,18 @@ impl MAXMIN {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct Multiband {
-    pub low: f32,
-    pub mid: f32,
-    pub high: f32,
+pub struct MultibandCalcBuffer {
+    pub low_buf: IIRBuffer,
+    pub mid_buf: IIRBuffer,
+    pub high_buf: IIRBuffer,
 }
 
-impl Multiband {
+impl MultibandCalcBuffer {
     pub fn new() -> Self {
         Self {
-            low: 0.0,
-            mid: 0.0,
-            high: 0.0,
+            low_buf: IIRBuffer::new(),
+            mid_buf: IIRBuffer::new(),
+            high_buf: IIRBuffer::new(),
         }
     }
 }
@@ -129,6 +139,12 @@ impl StereoCalcBuffer {
 
 #[derive(Debug, Clone, Default)]
 pub struct AudioSourceBuffer {
+    pub fft_1024_index: usize,
+    pub raw: RawData,
+    pub low_raw: RawData,
+    pub mid_raw: RawData,
+    pub high_raw: RawData,
+    pub multiband: MultibandCalcBuffer,
     pub peak: PeakCalcBuffer,
     pub waveform: WaveformCalcBuffer,
     pub stereo: StereoCalcBuffer,
@@ -137,6 +153,12 @@ pub struct AudioSourceBuffer {
 impl AudioSourceBuffer {
     pub fn new() -> Self {
         Self {
+            fft_1024_index: 0,
+            raw: RawData::new(),
+            low_raw: RawData::new(),
+            mid_raw: RawData::new(),
+            high_raw: RawData::new(),
+            multiband: MultibandCalcBuffer::new(),
             peak: PeakCalcBuffer::new(),
             waveform: WaveformCalcBuffer::new(),
             stereo: StereoCalcBuffer::new(),

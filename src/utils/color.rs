@@ -1,19 +1,37 @@
-pub fn multiband_color(data: Vec<f32>) -> egui::Color32 {
-    let low_size = 3;
-    let mid_size = 5;
-    let high_size = data.len() - low_size - mid_size;
-    let low = data.iter().take(low_size).sum::<f32>() * 256.0 / low_size as f32;
-    let mid =
-        data.iter().skip(low_size).take(mid_size).sum::<f32>() * 256.0 * 0.9 / mid_size as f32;
+use crate::utils::*;
+
+pub fn multiband_color(data: Vec<f32>) -> [f32; 3] {
+    let low = data
+        .iter()
+        .take(128)
+        .zip(MB_LOW.iter())
+        .map(|(a, b)| a * b)
+        .sum::<f32>()
+        / 256.0;
+    let mid = data
+        .iter()
+        .take(436)
+        .zip(MB_MID.iter())
+        .map(|(a, b)| a * b)
+        .sum::<f32>()
+        / (436.0 * 2.0);
     let high = data
         .iter()
-        .skip(low_size + mid_size)
-        .take(high_size)
+        .take(512)
+        .zip(MB_HIGH.iter())
+        .map(|(a, b)| a * b)
         .sum::<f32>()
-        * 256.0
-        * 0.7
-        / high_size as f32;
-    egui::Color32::from_rgb(low as u8, mid as u8, high as u8)
+        / 1024.0;
+    [if low > 1.0 { 1.0 } else { low }, mid, high]
+}
+
+pub fn full_brightness_color(rgb: &[f32; 3]) -> egui::Color32 {
+    let max = rgb.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+    egui::Color32::from_rgb(
+        (rgb[0] * (1.0 / max) * 255.0) as u8,
+        (rgb[1] * (1.0 / max) * 255.0) as u8,
+        (rgb[2] * (1.0 / max) * 255.0) as u8,
+    )
 }
 
 pub fn color_lut_129() -> Vec<egui::Color32> {

@@ -206,7 +206,11 @@ impl NanometersApp {
                 {
                     self.audio_source.as_mut().unwrap().stop();
                     let tx = self.tx.clone().unwrap();
-                    let callback = get_callback(tx, self.audio_source_buffer.clone());
+                    let callback = get_callback(
+                        tx,
+                        self.audio_source_buffer.clone(),
+                        self.audio_source_setting.clone(),
+                    );
                     let mut system_capture = SystemCapture::new(callback);
                     system_capture.start();
                     self.audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
@@ -221,7 +225,11 @@ impl NanometersApp {
                 {
                     self.audio_source.as_mut().unwrap().stop();
                     let tx = self.tx.clone().unwrap();
-                    let callback = get_callback(tx, self.audio_source_buffer.clone());
+                    let callback = get_callback(
+                        tx,
+                        self.audio_source_buffer.clone(),
+                        self.audio_source_setting.clone(),
+                    );
                     let mut plugin_client = PluginClient::new(callback);
                     plugin_client.start();
                     self.audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
@@ -320,6 +328,8 @@ impl NanometersApp {
                     let column = &mut self.setting.sequence[to.col];
                     to.row = to.row.min(column.len());
                     column.insert(to.row, item);
+                    self.audio_source_setting.lock().unwrap().sequence =
+                        self.setting.sequence.clone();
                 }
             });
         });

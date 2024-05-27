@@ -44,6 +44,9 @@ pub struct WaveformPlotPoint {
     pub(crate) du: VecDeque<f32>,
     pub(crate) dd: VecDeque<f32>,
     pub(crate) dcolor: VecDeque<egui::Color32>,
+    pub(crate) r: VecDeque<f32>,
+    pub(crate) g: VecDeque<f32>,
+    pub(crate) b: VecDeque<f32>,
 }
 
 impl WaveformPlotPoint {
@@ -55,6 +58,9 @@ impl WaveformPlotPoint {
             du: VecDeque::with_capacity(size),
             dd: VecDeque::with_capacity(size),
             dcolor: VecDeque::with_capacity(size),
+            r: VecDeque::with_capacity(size),
+            g: VecDeque::with_capacity(size),
+            b: VecDeque::with_capacity(size),
         }
     }
 }
@@ -105,28 +111,28 @@ impl WaveformCalcBuffer {
         }
     }
     pub fn update_l(&mut self, val: f32) {
-        self.raw.l.push(val);
         self.l.max = self.l.max.max(val);
         self.l.min = self.l.min.min(val);
+        self.raw.l.push(val * HANN_280[self.index]);
     }
     pub fn update_r(&mut self, val: f32) {
-        self.raw.r.push(val);
         self.r.max = self.r.max.max(val);
         self.r.min = self.r.min.min(val);
+        self.raw.r.push(val * HANN_280[self.index]);
     }
     pub fn update_m(&mut self, val: f32) {
-        self.raw.m.push(val);
         self.m.max = self.m.max.max(val);
         self.m.min = self.m.min.min(val);
+        self.raw.m.push(val * HANN_280[self.index]);
     }
     pub fn update_s(&mut self, val: f32) {
-        self.raw.s.push(val);
         self.s.max = self.s.max.max(val);
         self.s.min = self.s.min.min(val);
+        self.raw.s.push(val * HANN_280[self.index]);
     }
     pub fn reset(&mut self) {
         self.index = 0;
-        self.raw.clear();
+        self.raw = RawData::new();
         self.l = MAXMIN::new();
         self.r = MAXMIN::new();
         self.m = MAXMIN::new();
@@ -135,19 +141,17 @@ impl WaveformCalcBuffer {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct WaveformSendFrame {
+    pub value: MAXMIN,
+    pub color: [f32; 3],
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct WaveformSendData {
-    pub l: Vec<MAXMIN>,
-    pub r: Vec<MAXMIN>,
-    pub m: Vec<MAXMIN>,
-    pub s: Vec<MAXMIN>,
-    pub l_freq: Vec<usize>,
-    pub r_freq: Vec<usize>,
-    pub m_freq: Vec<usize>,
-    pub s_freq: Vec<usize>,
-    pub l_color: Vec<egui::Color32>,
-    pub r_color: Vec<egui::Color32>,
-    pub m_color: Vec<egui::Color32>,
-    pub s_color: Vec<egui::Color32>,
+    pub l: Vec<WaveformSendFrame>,
+    pub r: Vec<WaveformSendFrame>,
+    pub m: Vec<WaveformSendFrame>,
+    pub s: Vec<WaveformSendFrame>,
 }
 
 impl WaveformSendData {
@@ -157,14 +161,6 @@ impl WaveformSendData {
             r: vec![],
             m: vec![],
             s: vec![],
-            l_freq: vec![],
-            r_freq: vec![],
-            m_freq: vec![],
-            s_freq: vec![],
-            l_color: vec![],
-            r_color: vec![],
-            m_color: vec![],
-            s_color: vec![],
         }
     }
     pub fn concat(&mut self, data: &WaveformSendData) {
@@ -172,13 +168,5 @@ impl WaveformSendData {
         self.r.extend_from_slice(&data.r);
         self.m.extend_from_slice(&data.m);
         self.s.extend_from_slice(&data.s);
-        self.l_freq.extend_from_slice(&data.l_freq);
-        self.r_freq.extend_from_slice(&data.r_freq);
-        self.m_freq.extend_from_slice(&data.m_freq);
-        self.s_freq.extend_from_slice(&data.s_freq);
-        self.l_color.extend_from_slice(&data.l_color);
-        self.r_color.extend_from_slice(&data.r_color);
-        self.m_color.extend_from_slice(&data.m_color);
-        self.s_color.extend_from_slice(&data.s_color);
     }
 }

@@ -8,6 +8,7 @@ pub(crate) mod hann;
 pub(crate) mod iirfilter;
 pub(crate) mod rect_alloc;
 pub(crate) mod ringbuffer;
+pub(crate) mod windows;
 
 pub use calc_check::*;
 pub use color::*;
@@ -18,3 +19,4 @@ pub use hann::*;
 pub use iirfilter::*;
 pub use rect_alloc::*;
 pub use ringbuffer::*;
+pub use windows::*;

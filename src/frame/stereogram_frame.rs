@@ -17,6 +17,7 @@ impl NanometersApp {
         ui: &mut Ui,
     ) {
         ui.painter().rect_filled(rect, 0.0, self.setting.theme.bg);
+        self.setting.stereogram.point_size = rect.max.y * 0.01;
         match self.setting.stereogram.mode {
             StereogramMode::Logarithmic => {
                 match self.setting.stereogram.polarity {
@@ -174,7 +175,7 @@ impl NanometersApp {
                                 .map(|p| {
                                     Shape::circle_filled(
                                         transform.mul_pos(p.to_owned()),
-                                        self.setting.stereogram.point_size,
+                                        self.setting.stereogram.point_size * 0.5,
                                         self.setting.theme.main,
                                     )
                                 })
@@ -346,7 +347,7 @@ impl NanometersApp {
                                 .map(|p| {
                                     Shape::circle_filled(
                                         transform.mul_pos(p.clone()),
-                                        self.setting.stereogram.point_size,
+                                        self.setting.stereogram.point_size * 0.5,
                                         self.setting.theme.main,
                                     )
                                 })
