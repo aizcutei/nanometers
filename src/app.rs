@@ -46,6 +46,7 @@ pub struct NanometersApp {
     pub(crate) peak: Peak,
     pub(crate) vectorscope: Vectorscope,
     pub(crate) spectrogram: Spectrogram,
+    pub(crate) oscilloscope: Oscilloscope,
 }
 
 impl Default for NanometersApp {
@@ -80,6 +81,7 @@ impl Default for NanometersApp {
             peak: Default::default(),
             vectorscope: Default::default(),
             spectrogram: Default::default(),
+            oscilloscope: Default::default(),
         }
     }
 }

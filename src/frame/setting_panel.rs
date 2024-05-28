@@ -328,8 +328,9 @@ impl NanometersApp {
                     let column = &mut self.setting.sequence[to.col];
                     to.row = to.row.min(column.len());
                     column.insert(to.row, item);
-                    self.audio_source_setting.lock().unwrap().sequence =
-                        self.setting.sequence.clone();
+                    if let Ok(mut mutex) = self.audio_source_setting.try_lock() {
+                        mutex.sequence = self.setting.sequence.clone();
+                    }
                 }
             });
         });

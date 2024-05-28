@@ -59,7 +59,7 @@ impl NanometersApp {
                                     ]
                                     .into(),
                                 ],
-                                Stroke::new(3.0, self.setting.theme.frame),
+                                Stroke::new(2.0, self.setting.theme.frame),
                             ));
                             ui.painter().extend(shapes);
                         }
@@ -134,7 +134,7 @@ impl NanometersApp {
                                     ]
                                     .into(),
                                 ],
-                                Stroke::new(3.0, self.setting.theme.frame),
+                                Stroke::new(2.0, self.setting.theme.frame),
                             ));
                             shapes.push(Shape::line_segment(
                                 [
@@ -149,7 +149,7 @@ impl NanometersApp {
                                     ]
                                     .into(),
                                 ],
-                                Stroke::new(3.0, self.setting.theme.frame),
+                                Stroke::new(2.0, self.setting.theme.frame),
                             ));
                             ui.painter().extend(shapes);
                         }
@@ -223,7 +223,7 @@ impl NanometersApp {
                                     [rect.center().x, 0.0].into(),
                                     [rect.center().x, rect.max.y].into(),
                                 ],
-                                Stroke::new(3.0, self.setting.theme.frame),
+                                Stroke::new(2.0, self.setting.theme.frame),
                             ));
                             ui.painter().extend(shapes);
                         }

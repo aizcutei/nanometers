@@ -10,7 +10,6 @@ rust-version = "1.78"
 egui = { version = "0.27.2", features = ["rayon"] }
 eframe = { version = "0.27.2", default-features = false, features = [
     "default_fonts",
-    "glow",
     "wgpu",
     "persistence",
     "puffin",
@@ -31,7 +30,7 @@ rayon = "1.10"
 crossbeam-channel = "0.5.12"
 puffin = { version = "0.19", optional = true }
 puffin_http = { version = "0.16", optional = true }
-dasp = { version = "0.11.0", features = ["ring_buffer"] }
+# dasp = { version = "0.11.0", features = ["ring_buffer"] }
 
 [features]
 default = ["eframe/wgpu"]
@@ -41,6 +40,8 @@ puffin = ["eframe/puffin", "dep:puffin", "dep:puffin_http"]
 
 [profile.release]
 opt-level = 3
+strip = true
+lto = true
 
 # Optimize all dependencies even in debug builds:
 [profile.dev.package."*"]

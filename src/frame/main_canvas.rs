@@ -71,22 +71,26 @@ impl NanometersApp {
         let mut update_stereogram_data = VectorscopeSendData::new();
         let mut update_iir_data = Vec::new();
         let mut update_db_data = DBData::new();
+        let mut update_osc_data = OscilloscopeSendData::new();
+        let mut update_spectrogram_data = Vec::new();
 
         self.rx.as_mut().unwrap().try_iter().for_each(|data| {
             update_iir_data.extend_from_slice(&data.iir);
             update_db_data.l = data.db.l;
             update_db_data.r = data.db.r;
-            update_stereogram_data.max = data.stereo.max;
+            update_stereogram_data.max = data.vectorscope.max;
             update_stereogram_data
                 .lissa
-                .extend_from_slice(&data.stereo.lissa);
+                .extend_from_slice(&data.vectorscope.lissa);
             update_stereogram_data
                 .linear
-                .extend_from_slice(&data.stereo.linear);
+                .extend_from_slice(&data.vectorscope.linear);
             update_stereogram_data
                 .log
-                .extend_from_slice(&data.stereo.log);
+                .extend_from_slice(&data.vectorscope.log);
             update_waveform_data.concat(&data.waveform);
+            update_osc_data = data.oscilloscope;
+            update_spectrogram_data.extend_from_slice(&data.spectrogram);
         });
 
         ui.ctx().request_repaint();
@@ -104,7 +108,7 @@ impl NanometersApp {
                     self.peak_meter(&update_iir_data, &update_db_data, meter_rect, ui);
                 }
                 ModuleList::Oscilloscope => {
-                    self.oscilloscope_meter(meter_rect, ui);
+                    self.oscilloscope_meter(&update_osc_data, meter_rect, ui);
                 }
                 ModuleList::Spectrum => {
                     self.spectrum_meter(meter_rect, ui);

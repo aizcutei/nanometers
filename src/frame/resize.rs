@@ -1,7 +1,7 @@
 use egui::*;
 
 pub fn resize_ui(ui: &mut egui::Ui, rect: egui::Rect) {
-    let thickness = 1.0;
+    let thickness = 2.0;
     let left_top_corner_rect = egui::Rect::from_min_max(
         egui::Pos2::new(rect.min.x, rect.min.y),
         egui::Pos2::new(rect.min.x + thickness, rect.min.y + thickness),

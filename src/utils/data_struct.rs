@@ -1,6 +1,5 @@
 use crate::setting::*;
-use dasp::*;
-use egui::Pos2;
+use egui::*;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, Default)]
@@ -244,7 +243,7 @@ pub struct SendData {
     pub waveform: WaveformSendData,
     pub iir: Vec<f32>,
     pub db: DBData,
-    pub stereo: VectorscopeSendData,
+    pub vectorscope: VectorscopeSendData,
     pub spectrogram: Vec<SpectrogramFrame>,
     pub spectrum: SpectrumSendData,
     pub oscilloscope: OscilloscopeSendData,
@@ -256,7 +255,7 @@ impl SendData {
             waveform: WaveformSendData::new(),
             iir: Vec::new(),
             db: DBData::new(),
-            stereo: VectorscopeSendData::new(),
+            vectorscope: VectorscopeSendData::new(),
             spectrogram: Vec::new(),
             spectrum: SpectrumSendData::new(),
             oscilloscope: OscilloscopeSendData::new(),

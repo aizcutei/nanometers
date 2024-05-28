@@ -23,6 +23,7 @@ pub fn get_callback(
         let stereo_on = setting.sequence[1].contains(&ModuleList::Vectorscope);
         let spectrum_on = setting.sequence[1].contains(&ModuleList::Spectrum);
         let spectrogram_on = setting.sequence[1].contains(&ModuleList::Spectrogram);
+        let oscilloscope_on = setting.sequence[1].contains(&ModuleList::Oscilloscope);
 
         let waveform_block_length = 280;
         let stereo_block_length = 1;
@@ -142,6 +143,16 @@ pub fn get_callback(
                 buf.spectrogram.reset();
             }
 
+            if oscilloscope_on {
+                // Oscilloscope
+                if raw_len >= 2400 {
+                    send_data.oscilloscope = OscilloscopeSendData {
+                        len: 2400,
+                        data: buf.raw.m[raw_len - 2400..raw_len].to_vec(),
+                    };
+                }
+            }
+
             if waveform_on {
                 // Waveform
                 buf.waveform.update_l(l);
@@ -203,9 +214,9 @@ pub fn get_callback(
                 buf.stereo.update(l, r);
                 if buf.stereo.index >= stereo_block_length {
                     buf.stereo.index = 0;
-                    send_data.stereo.lissa.push(Pos2::new(l, r));
+                    send_data.vectorscope.lissa.push(Pos2::new(l, r));
                     send_data
-                        .stereo
+                        .vectorscope
                         .linear
                         .push(Pos2::new(-SQRT_2 * s, -SQRT_2 * m));
 
@@ -220,7 +231,7 @@ pub fn get_callback(
                     } else {
                         0.0
                     };
-                    send_data.stereo.log.push(Pos2::new(
+                    send_data.vectorscope.log.push(Pos2::new(
                         0.7071067812 * (log_y - log_x),
                         -0.7071067812 * (log_x + log_y),
                     ));
@@ -244,11 +255,11 @@ pub fn get_callback(
                 }
             }
 
-            if raw_len >= 4096 {
-                buf.raw.keep_last(2048);
-                buf.low_raw.keep_last(2048);
-                buf.mid_raw.keep_last(2048);
-                buf.high_raw.keep_last(2048);
+            if raw_len >= 8192 {
+                buf.raw.keep_last(4096);
+                buf.low_raw.keep_last(4096);
+                buf.mid_raw.keep_last(4096);
+                buf.high_raw.keep_last(4096);
             }
         }
 
@@ -256,7 +267,7 @@ pub fn get_callback(
 
         if stereo_on {
             // Stereo
-            send_data.stereo.max = buf.stereo.max;
+            send_data.vectorscope.max = buf.stereo.max;
             buf.stereo.max = f32::NEG_INFINITY;
         }
 

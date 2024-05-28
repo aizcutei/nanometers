@@ -3,6 +3,7 @@ use crate::utils::*;
 use crate::NanometersApp;
 use egui::*;
 use rayon::prelude::*;
+use rustfft::num_traits::WrappingSub;
 
 impl NanometersApp {
     pub fn waveform_meter(&mut self, data: &WaveformSendData, rect: Rect, ui: &mut Ui) {
@@ -90,8 +91,18 @@ impl NanometersApp {
                 epaint::Shape::vline(
                     rect.max.x - i as f32,
                     Rangef::new(
-                        *self.waveform.plot_point.uu.get(len - i).unwrap_or(&0.0),
-                        *self.waveform.plot_point.ud.get(len - i).unwrap_or(&0.0),
+                        *self
+                            .waveform
+                            .plot_point
+                            .uu
+                            .get(len.wrapping_sub(i))
+                            .unwrap_or(&0.0),
+                        *self
+                            .waveform
+                            .plot_point
+                            .ud
+                            .get(len.wrapping_sub(i))
+                            .unwrap_or(&0.0),
                     ),
                     match self.setting.waveform.mode {
                         WaveformMode::Static => Stroke::new(1.5, self.setting.theme.main),
@@ -100,7 +111,7 @@ impl NanometersApp {
                             self.waveform
                                 .plot_point
                                 .ucolor
-                                .get(len - i)
+                                .get(len.wrapping_sub(i))
                                 .unwrap_or(&self.setting.theme.main)
                                 .clone(),
                         ),
@@ -140,8 +151,18 @@ impl NanometersApp {
                 epaint::Shape::vline(
                     rect.max.x - i as f32,
                     Rangef::new(
-                        *self.waveform.plot_point.du.get(len - i).unwrap_or(&0.0),
-                        *self.waveform.plot_point.dd.get(len - i).unwrap_or(&0.0),
+                        *self
+                            .waveform
+                            .plot_point
+                            .du
+                            .get(len.wrapping_sub(i))
+                            .unwrap_or(&0.0),
+                        *self
+                            .waveform
+                            .plot_point
+                            .dd
+                            .get(len.wrapping_sub(i))
+                            .unwrap_or(&0.0),
                     ),
                     match self.setting.waveform.mode {
                         WaveformMode::Static => Stroke::new(1.5, self.setting.theme.main),
@@ -150,7 +171,7 @@ impl NanometersApp {
                             self.waveform
                                 .plot_point
                                 .dcolor
-                                .get(len - i)
+                                .get(len.wrapping_sub(i))
                                 .unwrap_or(&self.setting.theme.main)
                                 .clone(),
                         ),
@@ -190,15 +211,30 @@ impl NanometersApp {
         for i in 0..rect.width() as usize {
             r_points.push(Pos2::new(
                 rect.max.x - i as f32,
-                *self.waveform.plot_point.r.get(len - i).unwrap_or(&0.0),
+                *self
+                    .waveform
+                    .plot_point
+                    .r
+                    .get(len.wrapping_sub(i))
+                    .unwrap_or(&0.0),
             ));
             g_points.push(Pos2::new(
                 rect.max.x - i as f32,
-                *self.waveform.plot_point.g.get(len - i).unwrap_or(&0.0),
+                *self
+                    .waveform
+                    .plot_point
+                    .g
+                    .get(len.wrapping_sub(i))
+                    .unwrap_or(&0.0),
             ));
             b_points.push(Pos2::new(
                 rect.max.x - i as f32,
-                *self.waveform.plot_point.b.get(len - i).unwrap_or(&0.0),
+                *self
+                    .waveform
+                    .plot_point
+                    .b
+                    .get(len.wrapping_sub(i))
+                    .unwrap_or(&0.0),
             ));
         }
 
