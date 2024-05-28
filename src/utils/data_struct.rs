@@ -99,14 +99,14 @@ impl MultibandCalcBuffer {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct StereoSendData {
+pub struct VectorscopeSendData {
     pub max: f32,
     pub lissa: Vec<Pos2>,
     pub log: Vec<Pos2>,
     pub linear: Vec<Pos2>,
 }
 
-impl StereoSendData {
+impl VectorscopeSendData {
     pub fn new() -> Self {
         Self {
             max: f32::NEG_INFINITY,
@@ -118,12 +118,12 @@ impl StereoSendData {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct StereoCalcBuffer {
+pub struct VectorscopeCalcBuffer {
     pub index: usize,
     pub max: f32,
 }
 
-impl StereoCalcBuffer {
+impl VectorscopeCalcBuffer {
     pub fn new() -> Self {
         Self {
             index: 0,
@@ -138,8 +138,34 @@ impl StereoCalcBuffer {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct SpectrumCalcBuffer {
+    pub index: usize,
+    pub raw_hann: Vec<f32>,
+    pub raw_hann_dt: Vec<f32>,
+    pub raw_hann_t: Vec<f32>,
+}
+
+impl SpectrumCalcBuffer {
+    pub fn new() -> Self {
+        Self {
+            index: 0,
+            raw_hann: Vec::new(),
+            raw_hann_dt: Vec::new(),
+            raw_hann_t: Vec::new(),
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.index = 0;
+        self.raw_hann.clear();
+        self.raw_hann_dt.clear();
+        self.raw_hann_t.clear();
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct AudioSourceBuffer {
-    pub fft_1024_index: usize,
+    pub fft_2048_index: usize,
     pub raw: RawData,
     pub low_raw: RawData,
     pub mid_raw: RawData,
@@ -147,13 +173,14 @@ pub struct AudioSourceBuffer {
     pub multiband: MultibandCalcBuffer,
     pub peak: PeakCalcBuffer,
     pub waveform: WaveformCalcBuffer,
-    pub stereo: StereoCalcBuffer,
+    pub stereo: VectorscopeCalcBuffer,
+    pub spectrogram: SpectrumCalcBuffer,
 }
 
 impl AudioSourceBuffer {
     pub fn new() -> Self {
         Self {
-            fft_1024_index: 0,
+            fft_2048_index: 0,
             raw: RawData::new(),
             low_raw: RawData::new(),
             mid_raw: RawData::new(),
@@ -161,26 +188,78 @@ impl AudioSourceBuffer {
             multiband: MultibandCalcBuffer::new(),
             peak: PeakCalcBuffer::new(),
             waveform: WaveformCalcBuffer::new(),
-            stereo: StereoCalcBuffer::new(),
+            stereo: VectorscopeCalcBuffer::new(),
+            spectrogram: SpectrumCalcBuffer::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SpectrogramFrame {
+    pub f: Vec<f32>,
+    pub fc: Vec<f32>,
+    pub tc: Vec<f32>,
+    pub cc: Vec<f32>,
+}
+
+impl SpectrogramFrame {
+    pub fn new() -> Self {
+        Self {
+            f: Vec::new(),
+            fc: Vec::new(),
+            tc: Vec::new(),
+            cc: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SpectrumSendData {
+    pub frames: Vec<RawData>,
+}
+
+impl SpectrumSendData {
+    pub fn new() -> Self {
+        Self { frames: Vec::new() }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct OscilloscopeSendData {
+    pub len: usize,
+    pub data: Vec<f32>,
+}
+
+impl OscilloscopeSendData {
+    pub fn new() -> Self {
+        Self {
+            len: 0,
+            data: Vec::new(),
         }
     }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct SendData {
-    pub waveform_data: WaveformSendData,
-    pub iir_data: Vec<f32>,
-    pub db_data: DBData,
-    pub stereo_data: StereoSendData,
+    pub waveform: WaveformSendData,
+    pub iir: Vec<f32>,
+    pub db: DBData,
+    pub stereo: VectorscopeSendData,
+    pub spectrogram: Vec<SpectrogramFrame>,
+    pub spectrum: SpectrumSendData,
+    pub oscilloscope: OscilloscopeSendData,
 }
 
 impl SendData {
     pub fn new() -> Self {
         Self {
-            waveform_data: WaveformSendData::new(),
-            iir_data: Vec::new(),
-            db_data: DBData::new(),
-            stereo_data: StereoSendData::new(),
+            waveform: WaveformSendData::new(),
+            iir: Vec::new(),
+            db: DBData::new(),
+            stereo: VectorscopeSendData::new(),
+            spectrogram: Vec::new(),
+            spectrum: SpectrumSendData::new(),
+            oscilloscope: OscilloscopeSendData::new(),
         }
     }
 }

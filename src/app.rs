@@ -29,10 +29,6 @@ pub struct NanometersApp {
     #[serde(skip)]
     pub(crate) rx: Option<Receiver<SendData>>,
 
-    // #[serde(skip)]
-    // pub(crate) tx_setting: Option<Sender<AudioSourceSetting>>,
-    // #[serde(skip)]
-    // pub(crate) rx_setting: Option<Receiver<AudioSourceSetting>>,
     #[serde(skip)]
     pub(crate) audio_source_buffer: Arc<Mutex<AudioSourceBuffer>>,
     #[serde(skip)]
@@ -48,7 +44,8 @@ pub struct NanometersApp {
 
     pub(crate) waveform: Waveform,
     pub(crate) peak: Peak,
-    pub(crate) stereo: Stereo,
+    pub(crate) vectorscope: Vectorscope,
+    pub(crate) spectrogram: Spectrogram,
 }
 
 impl Default for NanometersApp {
@@ -71,8 +68,6 @@ impl Default for NanometersApp {
             frame_history: Default::default(),
             tx: Some(tx),
             rx: Some(rx),
-            // tx_setting: Some(tx_setting),
-            // rx_setting: Some(rx_setting),
             audio_source_buffer,
             audio_source_setting,
             setting,
@@ -83,7 +78,8 @@ impl Default for NanometersApp {
             meters_rects: vec![],
             waveform: Default::default(),
             peak: Default::default(),
-            stereo: Default::default(),
+            vectorscope: Default::default(),
+            spectrogram: Default::default(),
         }
     }
 }
@@ -140,7 +136,7 @@ impl eframe::App for NanometersApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         self.frame_history
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
-        self.main_frame(ctx);
+        self.main_canvas(ctx);
         if ctx.input(|i| i.viewport().close_requested()) {
             self.audio_source.as_mut().unwrap().stop();
         }

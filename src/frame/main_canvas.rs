@@ -3,7 +3,7 @@ use crate::{frame::*, setting::*, utils::*};
 use egui::*;
 
 impl NanometersApp {
-    pub fn main_frame(&mut self, ctx: &egui::Context) {
+    pub fn main_canvas(&mut self, ctx: &egui::Context) {
         let full_frame = egui::Frame {
             fill: ctx.style().visuals.window_fill(),
             ..Default::default()
@@ -68,25 +68,25 @@ impl NanometersApp {
         }
 
         let mut update_waveform_data = WaveformSendData::new();
-        let mut update_stereogram_data = StereoSendData::new();
+        let mut update_stereogram_data = VectorscopeSendData::new();
         let mut update_iir_data = Vec::new();
         let mut update_db_data = DBData::new();
 
         self.rx.as_mut().unwrap().try_iter().for_each(|data| {
-            update_iir_data.extend_from_slice(&data.iir_data);
-            update_db_data.l = data.db_data.l;
-            update_db_data.r = data.db_data.r;
-            update_stereogram_data.max = data.stereo_data.max;
+            update_iir_data.extend_from_slice(&data.iir);
+            update_db_data.l = data.db.l;
+            update_db_data.r = data.db.r;
+            update_stereogram_data.max = data.stereo.max;
             update_stereogram_data
                 .lissa
-                .extend_from_slice(&data.stereo_data.lissa);
+                .extend_from_slice(&data.stereo.lissa);
             update_stereogram_data
                 .linear
-                .extend_from_slice(&data.stereo_data.linear);
+                .extend_from_slice(&data.stereo.linear);
             update_stereogram_data
                 .log
-                .extend_from_slice(&data.stereo_data.log);
-            update_waveform_data.concat(&data.waveform_data);
+                .extend_from_slice(&data.stereo.log);
+            update_waveform_data.concat(&data.waveform);
         });
 
         ui.ctx().request_repaint();
@@ -95,22 +95,22 @@ impl NanometersApp {
             let mut meter_rect = self.meters_rects[i];
             match meter {
                 ModuleList::Waveform => {
-                    self.waveform_frame(&update_waveform_data, meter_rect, ui);
+                    self.waveform_meter(&update_waveform_data, meter_rect, ui);
                 }
                 ModuleList::Spectrogram => {
-                    self.spectrogram_frame(meter_rect, ui);
+                    self.spectrogram_meter(meter_rect, ui);
                 }
                 ModuleList::Peak => {
-                    self.peak_frame(&update_iir_data, &update_db_data, meter_rect, ui);
+                    self.peak_meter(&update_iir_data, &update_db_data, meter_rect, ui);
                 }
                 ModuleList::Oscilloscope => {
-                    self.oscilloscope_frame(meter_rect, ui);
+                    self.oscilloscope_meter(meter_rect, ui);
                 }
                 ModuleList::Spectrum => {
-                    self.spectrum_frame(meter_rect, ui);
+                    self.spectrum_meter(meter_rect, ui);
                 }
-                ModuleList::Stereogram => {
-                    self.stereogram_frame(&update_stereogram_data, meter_rect, ui);
+                ModuleList::Vectorscope => {
+                    self.vectorscope_meter(&update_stereogram_data, meter_rect, ui);
                 }
             }
         }
@@ -195,7 +195,7 @@ impl NanometersApp {
             Grid::new("Setting_ui").show(ui, |ui| {
                 self.modules_sequence_block(ui);
                 self.waveform_setting_block(ui);
-                self.stereogram_settiing_block(ui);
+                self.vectorscope_settiing_block(ui);
                 ui.end_row();
 
                 self.spectrogram_setting_block(ui);

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum ModuleList {
     Waveform,
     Spectrogram,
-    Stereogram,
+    Vectorscope,
     Oscilloscope,
     Spectrum,
     Peak,
@@ -15,7 +15,7 @@ impl ToString for ModuleList {
         match self {
             ModuleList::Waveform => "Waveform".to_string(),
             ModuleList::Spectrogram => "Spectrogram".to_string(),
-            ModuleList::Stereogram => "Stereogram".to_string(),
+            ModuleList::Vectorscope => "Vectorscope".to_string(),
             ModuleList::Oscilloscope => "Oscilloscope".to_string(),
             ModuleList::Spectrum => "Spectrum".to_string(),
             ModuleList::Peak => "Peak".to_string(),

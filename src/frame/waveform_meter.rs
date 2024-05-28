@@ -5,7 +5,7 @@ use egui::*;
 use rayon::prelude::*;
 
 impl NanometersApp {
-    pub fn waveform_frame(&mut self, data: &WaveformSendData, rect: Rect, ui: &mut Ui) {
+    pub fn waveform_meter(&mut self, data: &WaveformSendData, rect: Rect, ui: &mut Ui) {
         ui.painter().rect_filled(rect, 0.0, self.setting.theme.bg);
         let upper_rect = Rect::from_two_pos(rect.min, pos2(rect.max.x, rect.center().y));
         let lower_rect = Rect::from_two_pos(pos2(rect.min.x, rect.center().y), rect.max);
@@ -13,32 +13,32 @@ impl NanometersApp {
         match self.setting.waveform.channel_1 {
             WaveformChannel::None => {}
             WaveformChannel::Left => {
-                self.waveform_upper_channel_frame(&data.l, upper_rect, ui);
+                self.waveform_upper_channel(&data.l, upper_rect, ui);
             }
             WaveformChannel::Right => {
-                self.waveform_upper_channel_frame(&data.r, upper_rect, ui);
+                self.waveform_upper_channel(&data.r, upper_rect, ui);
             }
             WaveformChannel::Mid => {
-                self.waveform_upper_channel_frame(&data.m, upper_rect, ui);
+                self.waveform_upper_channel(&data.m, upper_rect, ui);
             }
             WaveformChannel::Side => {
-                self.waveform_upper_channel_frame(&data.s, upper_rect, ui);
+                self.waveform_upper_channel(&data.s, upper_rect, ui);
             }
         }
 
         match self.setting.waveform.channel_2 {
             WaveformChannel::None => {}
             WaveformChannel::Left => {
-                self.waveform_lower_channel_frame(&data.l, lower_rect, ui);
+                self.waveform_lower_channel(&data.l, lower_rect, ui);
             }
             WaveformChannel::Right => {
-                self.waveform_lower_channel_frame(&data.r, lower_rect, ui);
+                self.waveform_lower_channel(&data.r, lower_rect, ui);
             }
             WaveformChannel::Mid => {
-                self.waveform_lower_channel_frame(&data.m, lower_rect, ui);
+                self.waveform_lower_channel(&data.m, lower_rect, ui);
             }
             WaveformChannel::Side => {
-                self.waveform_lower_channel_frame(&data.s, lower_rect, ui);
+                self.waveform_lower_channel(&data.s, lower_rect, ui);
             }
         }
 
@@ -61,12 +61,7 @@ impl NanometersApp {
         }
     }
 
-    fn waveform_upper_channel_frame(
-        &mut self,
-        data: &[WaveformSendFrame],
-        rect: Rect,
-        ui: &mut Ui,
-    ) {
+    fn waveform_upper_channel(&mut self, data: &[WaveformSendFrame], rect: Rect, ui: &mut Ui) {
         if !data.is_empty() {
             data.iter().for_each(|(v)| {
                 if self.waveform.plot_point.uu.len() >= self.waveform.history_length {
@@ -116,12 +111,7 @@ impl NanometersApp {
         ui.painter().extend(shapes);
     }
 
-    fn waveform_lower_channel_frame(
-        &mut self,
-        data: &[WaveformSendFrame],
-        rect: Rect,
-        ui: &mut Ui,
-    ) {
+    fn waveform_lower_channel(&mut self, data: &[WaveformSendFrame], rect: Rect, ui: &mut Ui) {
         if !data.is_empty() {
             data.iter().for_each(|(v)| {
                 if self.waveform.plot_point.du.len() >= self.waveform.history_length {

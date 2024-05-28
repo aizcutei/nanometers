@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::utils::SpectrogramFrame;
+
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SpectrogramOrientation {
     #[default]
@@ -27,4 +29,10 @@ pub struct SpectrogramSetting {
     pub(crate) mode: SpectrogramMode,
     pub(crate) curve: SpectrogramCurve,
     pub(crate) brightness_boost: f64,
+}
+
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+pub struct Spectrogram {
+    #[serde(skip)]
+    pub(crate) buf: Vec<SpectrogramFrame>,
 }

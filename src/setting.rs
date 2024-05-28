@@ -7,8 +7,8 @@ pub(crate) mod oscilloscope;
 pub(crate) mod peak;
 pub(crate) mod spectrogram;
 pub(crate) mod spectrum;
-pub(crate) mod stereogram;
 pub(crate) mod theme;
+pub(crate) mod vectorscope;
 pub(crate) mod waveform;
 
 pub use audio_device::*;
@@ -18,8 +18,8 @@ pub use oscilloscope::*;
 pub use peak::*;
 pub use spectrogram::*;
 pub use spectrum::*;
-pub use stereogram::*;
 pub use theme::*;
+pub use vectorscope::*;
 pub use waveform::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,7 +27,7 @@ pub struct Setting {
     pub audio_device: AudioDeviceSetting,
     pub waveform: WaveformSetting,
     pub spectrogram: SpectrogramSetting,
-    pub stereogram: StereogramSetting,
+    pub vectorscope: VectorscopeSetting,
     pub oscilloscope: OscilloscopeSetting,
     pub spectrum: SpectrumSetting,
     pub sequence: Vec<Vec<ModuleList>>,
@@ -41,7 +41,7 @@ impl Default for Setting {
             audio_device: AudioDeviceSetting::default(),
             waveform: WaveformSetting::default(),
             spectrogram: SpectrogramSetting::default(),
-            stereogram: StereogramSetting::default(),
+            vectorscope: VectorscopeSetting::default(),
             oscilloscope: OscilloscopeSetting::default(),
             spectrum: SpectrumSetting::default(),
 
@@ -49,7 +49,7 @@ impl Default for Setting {
                 vec![
                     ModuleList::Waveform,
                     ModuleList::Spectrogram,
-                    ModuleList::Stereogram,
+                    ModuleList::Vectorscope,
                     ModuleList::Oscilloscope,
                     ModuleList::Spectrum,
                     ModuleList::Peak,

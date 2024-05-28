@@ -4,7 +4,7 @@ use crate::NanometersApp;
 use egui::*;
 
 impl NanometersApp {
-    pub fn peak_frame(&mut self, iir_data: &Vec<f32>, db_data: &DBData, rect: Rect, ui: &mut Ui) {
+    pub fn peak_meter(&mut self, iir_data: &Vec<f32>, db_data: &DBData, rect: Rect, ui: &mut Ui) {
         ui.painter().rect_filled(rect, 0.0, self.setting.theme.bg);
         // DB
         if !db_data.l.is_finite() {

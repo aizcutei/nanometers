@@ -10,20 +10,20 @@ const SQRT2_2_SUB1: f32 = 0.2928932188134524;
 const SQRT2_2_ADD1: f32 = 1.7071067811865476;
 
 impl NanometersApp {
-    pub fn stereogram_frame(
+    pub fn vectorscope_meter(
         &mut self,
-        data: &StereoSendData,
+        data: &VectorscopeSendData,
         rect: eframe::epaint::Rect,
         ui: &mut Ui,
     ) {
         ui.painter().rect_filled(rect, 0.0, self.setting.theme.bg);
-        self.setting.stereogram.point_size = rect.max.y * 0.01;
-        match self.setting.stereogram.mode {
-            StereogramMode::Logarithmic => {
-                match self.setting.stereogram.polarity {
-                    StereogramPolarity::Uni => {
+        self.setting.vectorscope.point_size = rect.max.y * 0.01;
+        match self.setting.vectorscope.mode {
+            VectorscopeMode::Logarithmic => {
+                match self.setting.vectorscope.polarity {
+                    VectorscopePolarity::Uni => {
                         // Guide lines
-                        if self.setting.stereogram.guides {
+                        if self.setting.vectorscope.guides {
                             let mut shapes = vec![];
                             shapes.push(Shape::circle_stroke(
                                 rect.center_bottom(),
@@ -65,11 +65,11 @@ impl NanometersApp {
                         }
                         // Point plot
                         if data.linear.is_empty() {
-                            ui.painter().extend(self.stereo.plot.clone());
+                            ui.painter().extend(self.vectorscope.plot.clone());
                         } else {
                             let transform = emath::TSTransform::new(
                                 [rect.center().x, rect.max.y].into(),
-                                if self.setting.stereogram.normalize {
+                                if self.setting.vectorscope.normalize {
                                     if data.max > 0.001 {
                                         rect.max.y / (1.0 + data.max.log10() / 3.0)
                                     } else {
@@ -88,18 +88,18 @@ impl NanometersApp {
                                             if p.y > 0.0 { -p.x } else { p.x },
                                             if p.y > 0.0 { -p.y } else { p.y },
                                         )),
-                                        self.setting.stereogram.point_size,
+                                        self.setting.vectorscope.point_size,
                                         self.setting.theme.main,
                                     )
                                 })
                                 .collect();
-                            self.stereo.plot = shapes.clone();
+                            self.vectorscope.plot = shapes.clone();
                             ui.painter().extend(shapes);
                         }
                     }
-                    StereogramPolarity::Bi => {
+                    VectorscopePolarity::Bi => {
                         // Guide lines
-                        if self.setting.stereogram.guides {
+                        if self.setting.vectorscope.guides {
                             let mut shapes = vec![];
                             shapes.push(Shape::circle_stroke(
                                 rect.center(),
@@ -155,11 +155,11 @@ impl NanometersApp {
                         }
                         // Point
                         if data.linear.is_empty() {
-                            ui.painter().extend(self.stereo.plot.clone());
+                            ui.painter().extend(self.vectorscope.plot.clone());
                         } else {
                             let transform = emath::TSTransform::new(
                                 [rect.center().x, rect.center().y].into(),
-                                if self.setting.stereogram.normalize {
+                                if self.setting.vectorscope.normalize {
                                     if data.max > 0.001 {
                                         rect.center().y / (1.0 + data.max.log10() / 3.0)
                                     } else {
@@ -175,22 +175,22 @@ impl NanometersApp {
                                 .map(|p| {
                                     Shape::circle_filled(
                                         transform.mul_pos(p.to_owned()),
-                                        self.setting.stereogram.point_size * 0.5,
+                                        self.setting.vectorscope.point_size * 0.5,
                                         self.setting.theme.main,
                                     )
                                 })
                                 .collect();
-                            self.stereo.plot = shapes.clone();
+                            self.vectorscope.plot = shapes.clone();
                             ui.painter().extend(shapes);
                         }
                     }
                 }
             }
-            StereogramMode::Linear => {
-                match self.setting.stereogram.polarity {
-                    StereogramPolarity::Uni => {
+            VectorscopeMode::Linear => {
+                match self.setting.vectorscope.polarity {
+                    VectorscopePolarity::Uni => {
                         // Guide lines
-                        if self.setting.stereogram.guides {
+                        if self.setting.vectorscope.guides {
                             let mut shapes = vec![];
                             shapes.push(Shape::line(
                                 vec![
@@ -229,11 +229,11 @@ impl NanometersApp {
                         }
                         // Points
                         if data.linear.is_empty() {
-                            ui.painter().extend(self.stereo.plot.clone());
+                            ui.painter().extend(self.vectorscope.plot.clone());
                         } else {
                             let transform = emath::TSTransform::new(
                                 [rect.center().x, rect.max.y].into(),
-                                if self.setting.stereogram.normalize {
+                                if self.setting.vectorscope.normalize {
                                     0.717067812 * rect.max.y / data.max
                                 } else {
                                     0.717067812 * rect.center().y
@@ -248,18 +248,18 @@ impl NanometersApp {
                                             if p.y > 0.0 { -p.x } else { p.x },
                                             if p.y > 0.0 { -p.y } else { p.y },
                                         )),
-                                        self.setting.stereogram.point_size,
+                                        self.setting.vectorscope.point_size,
                                         self.setting.theme.main,
                                     )
                                 })
                                 .collect();
-                            self.stereo.plot = shapes.clone();
+                            self.vectorscope.plot = shapes.clone();
                             ui.painter().extend(shapes);
                         }
                     }
-                    StereogramPolarity::Bi => {
+                    VectorscopePolarity::Bi => {
                         // Guide lines
-                        if self.setting.stereogram.guides {
+                        if self.setting.vectorscope.guides {
                             let mut shapes = vec![];
                             shapes.push(Shape::line(
                                 vec![
@@ -331,11 +331,11 @@ impl NanometersApp {
                         }
                         // Points
                         if data.linear.is_empty() {
-                            ui.painter().extend(self.stereo.plot.clone());
+                            ui.painter().extend(self.vectorscope.plot.clone());
                         } else {
                             let transform = emath::TSTransform::new(
                                 [rect.center().x, rect.center().y].into(),
-                                if self.setting.stereogram.normalize {
+                                if self.setting.vectorscope.normalize {
                                     0.3535533906 * rect.max.y / data.max
                                 } else {
                                     0.3535533906 * rect.center().y
@@ -347,23 +347,23 @@ impl NanometersApp {
                                 .map(|p| {
                                     Shape::circle_filled(
                                         transform.mul_pos(p.clone()),
-                                        self.setting.stereogram.point_size * 0.5,
+                                        self.setting.vectorscope.point_size * 0.5,
                                         self.setting.theme.main,
                                     )
                                 })
                                 .collect();
-                            self.stereo.plot = shapes.clone();
+                            self.vectorscope.plot = shapes.clone();
                             ui.painter().extend(shapes);
                         }
                     }
                 }
             }
-            StereogramMode::Lissajous => match self.setting.stereogram.color {
-                StereogramColor::Static => {
+            VectorscopeMode::Lissajous => match self.setting.vectorscope.color {
+                VectorscopeColor::Static => {
                     if !data.lissa.is_empty() {
                         let transform = emath::TSTransform::new(
                             [rect.center().x, rect.center().y].into(),
-                            if self.setting.stereogram.normalize {
+                            if self.setting.vectorscope.normalize {
                                 rect.center().y / data.max
                             } else {
                                 rect.center().y
@@ -375,19 +375,19 @@ impl NanometersApp {
                             .map(|p| {
                                 Shape::circle_filled(
                                     transform.mul_pos(p.to_owned()).to_owned(),
-                                    self.setting.stereogram.point_size,
+                                    self.setting.vectorscope.point_size,
                                     self.setting.theme.main,
                                 )
                             })
                             .collect();
-                        self.stereo.plot = shapes.clone();
+                        self.vectorscope.plot = shapes.clone();
                         ui.painter().extend(shapes);
                     } else {
-                        ui.painter().extend(self.stereo.plot.clone());
+                        ui.painter().extend(self.vectorscope.plot.clone());
                     }
                 }
-                StereogramColor::RGB => {}
-                StereogramColor::MultiBand => {}
+                VectorscopeColor::RGB => {}
+                VectorscopeColor::MultiBand => {}
             },
         }
     }

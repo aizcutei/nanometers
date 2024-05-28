@@ -2,7 +2,7 @@ use egui::Shape;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub enum StereogramMode {
+pub enum VectorscopeMode {
     #[default]
     Logarithmic,
     Linear,
@@ -10,7 +10,7 @@ pub enum StereogramMode {
 }
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub enum StereogramColor {
+pub enum VectorscopeColor {
     #[default]
     Static,
     RGB,
@@ -18,28 +18,28 @@ pub enum StereogramColor {
 }
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub enum StereogramPolarity {
+pub enum VectorscopePolarity {
     #[default]
     Uni,
     Bi,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-pub struct StereogramSetting {
-    pub(crate) mode: StereogramMode,
-    pub(crate) color: StereogramColor,
-    pub(crate) polarity: StereogramPolarity,
+pub struct VectorscopeSetting {
+    pub(crate) mode: VectorscopeMode,
+    pub(crate) color: VectorscopeColor,
+    pub(crate) polarity: VectorscopePolarity,
     pub(crate) normalize: bool,
     pub(crate) guides: bool,
     pub(crate) point_size: f32,
 }
 
-impl Default for StereogramSetting {
+impl Default for VectorscopeSetting {
     fn default() -> Self {
         Self {
-            mode: StereogramMode::default(),
-            color: StereogramColor::default(),
-            polarity: StereogramPolarity::default(),
+            mode: VectorscopeMode::default(),
+            color: VectorscopeColor::default(),
+            polarity: VectorscopePolarity::default(),
             normalize: false,
             guides: false,
             point_size: 0.9,
@@ -48,12 +48,12 @@ impl Default for StereogramSetting {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Stereo {
+pub struct Vectorscope {
     #[serde(skip)]
     pub(crate) plot: Vec<Shape>,
 }
 
-impl Stereo {
+impl Vectorscope {
     pub fn new() -> Self {
         Self { plot: Vec::new() }
     }

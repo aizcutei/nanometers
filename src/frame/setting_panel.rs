@@ -335,69 +335,69 @@ impl NanometersApp {
         });
     }
 
-    pub fn stereogram_settiing_block(&mut self, ui: &mut Ui) {
-        // Stereogram
+    pub fn vectorscope_settiing_block(&mut self, ui: &mut Ui) {
+        // Vectorscope
         ui.group(|ui| {
             ui.vertical(|ui| {
-                ui.heading("Sterogram");
+                ui.heading("Vectorscope");
                 ui.horizontal(|ui| {
                     ui.label("Mode");
                     ui.selectable_value(
-                        &mut self.setting.stereogram.mode,
-                        setting::StereogramMode::Logarithmic,
+                        &mut self.setting.vectorscope.mode,
+                        setting::VectorscopeMode::Logarithmic,
                         "Logarithmic",
                     );
                     ui.selectable_value(
-                        &mut self.setting.stereogram.mode,
-                        setting::StereogramMode::Linear,
+                        &mut self.setting.vectorscope.mode,
+                        setting::VectorscopeMode::Linear,
                         "Linear",
                     );
                     ui.selectable_value(
-                        &mut self.setting.stereogram.mode,
-                        setting::StereogramMode::Lissajous,
+                        &mut self.setting.vectorscope.mode,
+                        setting::VectorscopeMode::Lissajous,
                         "Lissajous",
                     );
                 });
                 ui.horizontal(|ui| {
                     ui.label("Color");
                     ui.selectable_value(
-                        &mut self.setting.stereogram.color,
-                        setting::StereogramColor::Static,
+                        &mut self.setting.vectorscope.color,
+                        setting::VectorscopeColor::Static,
                         "Static",
                     );
                     ui.selectable_value(
-                        &mut self.setting.stereogram.color,
-                        setting::StereogramColor::RGB,
+                        &mut self.setting.vectorscope.color,
+                        setting::VectorscopeColor::RGB,
                         "RGB",
                     );
                     ui.selectable_value(
-                        &mut self.setting.stereogram.color,
-                        setting::StereogramColor::MultiBand,
+                        &mut self.setting.vectorscope.color,
+                        setting::VectorscopeColor::MultiBand,
                         "MultiBand",
                     );
                 });
                 ui.horizontal(|ui| {
                     ui.label("Polarity");
                     ui.selectable_value(
-                        &mut self.setting.stereogram.polarity,
-                        setting::StereogramPolarity::Uni,
+                        &mut self.setting.vectorscope.polarity,
+                        setting::VectorscopePolarity::Uni,
                         "Uniploar",
                     );
                     ui.selectable_value(
-                        &mut self.setting.stereogram.polarity,
-                        setting::StereogramPolarity::Bi,
+                        &mut self.setting.vectorscope.polarity,
+                        setting::VectorscopePolarity::Bi,
                         "Biploar",
                     );
                 });
                 ui.horizontal(|ui| {
                     ui.label("Normalize");
-                    ui.selectable_value(&mut self.setting.stereogram.normalize, false, "Off");
-                    ui.selectable_value(&mut self.setting.stereogram.normalize, true, "On");
+                    ui.selectable_value(&mut self.setting.vectorscope.normalize, false, "Off");
+                    ui.selectable_value(&mut self.setting.vectorscope.normalize, true, "On");
                 });
                 ui.horizontal(|ui| {
                     ui.label("Guides");
-                    ui.selectable_value(&mut self.setting.stereogram.guides, false, "Off");
-                    ui.selectable_value(&mut self.setting.stereogram.guides, true, "On");
+                    ui.selectable_value(&mut self.setting.vectorscope.guides, false, "Off");
+                    ui.selectable_value(&mut self.setting.vectorscope.guides, true, "On");
                 });
             });
         });
