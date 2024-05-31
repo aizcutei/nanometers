@@ -155,7 +155,7 @@ impl NanometersApp {
                     ui.add(
                         egui::Slider::new(
                             &mut self.setting.spectrogram.brightness_boost,
-                            0.0..=1.0,
+                            0.01..=1.0,
                         )
                         .text(""),
                     );
@@ -205,11 +205,10 @@ impl NanometersApp {
                     .changed()
                 {
                     self.audio_source.as_mut().unwrap().stop();
-                    let tx = self.tx.clone().unwrap();
                     let callback = get_callback(
-                        tx,
+                        self.tx_data.clone().unwrap(),
+                        self.rx_setting.clone().unwrap(),
                         self.audio_source_buffer.clone(),
-                        self.audio_source_setting.clone(),
                     );
                     let mut system_capture = SystemCapture::new(callback);
                     system_capture.start();
@@ -224,11 +223,11 @@ impl NanometersApp {
                     .changed()
                 {
                     self.audio_source.as_mut().unwrap().stop();
-                    let tx = self.tx.clone().unwrap();
+
                     let callback = get_callback(
-                        tx,
+                        self.tx_data.clone().unwrap(),
+                        self.rx_setting.clone().unwrap(),
                         self.audio_source_buffer.clone(),
-                        self.audio_source_setting.clone(),
                     );
                     let mut plugin_client = PluginClient::new(callback);
                     plugin_client.start();
@@ -328,9 +327,11 @@ impl NanometersApp {
                     let column = &mut self.setting.sequence[to.col];
                     to.row = to.row.min(column.len());
                     column.insert(to.row, item);
-                    if let Ok(mut mutex) = self.audio_source_setting.try_lock() {
-                        mutex.sequence = self.setting.sequence.clone();
-                    }
+                    self.tx_setting
+                        .as_ref()
+                        .unwrap()
+                        .send(self.setting.clone())
+                        .unwrap();
                 }
             });
         });
