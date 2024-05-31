@@ -126,40 +126,66 @@ impl NanometersApp {
                 });
                 ui.horizontal(|ui| {
                     ui.label("Mode");
-                    ui.selectable_value(
-                        &mut self.setting.spectrogram.mode,
-                        setting::SpectrogramMode::Sharp,
-                        "Sharp",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.spectrogram.mode,
-                        setting::SpectrogramMode::Classic,
-                        "Classic",
-                    );
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.mode,
+                            setting::SpectrogramMode::Sharp,
+                            "Sharp",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.mode,
+                            setting::SpectrogramMode::Classic,
+                            "Classic",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
                 });
                 ui.horizontal(|ui| {
                     ui.label("Curve");
-                    ui.selectable_value(
-                        &mut self.setting.spectrogram.curve,
-                        setting::SpectrogramCurve::Linear,
-                        "Linear",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.spectrogram.curve,
-                        setting::SpectrogramCurve::Logarithmic,
-                        "Logarithmic",
-                    );
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Brightness Boost");
-                    ui.add(
-                        egui::Slider::new(
-                            &mut self.setting.spectrogram.brightness_boost,
-                            0.01..=1.0,
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.curve,
+                            setting::SpectrogramCurve::Linear,
+                            "Linear",
                         )
-                        .text(""),
-                    );
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.curve,
+                            setting::SpectrogramCurve::Logarithmic,
+                            "Logarithmic",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
                 });
+                if ui
+                    .horizontal(|ui| {
+                        ui.label("Brightness Boost");
+                        ui.add(
+                            egui::Slider::new(
+                                &mut self.setting.spectrogram.brightness_boost,
+                                0.01..=1.0,
+                            )
+                            .text(""),
+                        );
+                    })
+                    .response
+                    .contains_pointer()
+                {
+                    self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                };
             });
         });
     }
@@ -567,6 +593,7 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::DARK_THEME;
                         ui.ctx().set_visuals(set_theme(self));
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::LIGHT_THEME, "Light")
@@ -574,6 +601,7 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::LIGHT_THEME;
                         ui.ctx().set_visuals(set_theme(self));
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::PINK_THEME, "Pink")
@@ -581,6 +609,7 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::PINK_THEME;
                         ui.ctx().set_visuals(set_theme(self));
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     }
                 });
             });

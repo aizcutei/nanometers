@@ -52,26 +52,15 @@ pub struct SpectrogramRects {
     pub color: u8,
 }
 
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Spectrogram {
-    // #[serde(skip)]
-    // pub(crate) points: Vec<SpectrogramPoints>,
     #[serde(skip)]
-    pub(crate) texture_raw: VecDeque<Color32>,
-    #[serde(skip)]
-    pub(crate) texture_size: [usize; 2],
-    #[serde(skip)]
-    pub(crate) waiting_index: usize,
+    pub(crate) texture: Option<egui::TextureHandle>,
 }
 
 impl Spectrogram {
     pub fn new() -> Self {
-        Self {
-            // points: vec![],
-            texture_raw: VecDeque::new(),
-            texture_size: [2048, 2048],
-            waiting_index: 0,
-        }
+        Self { texture: None }
     }
 }
 

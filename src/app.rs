@@ -19,23 +19,27 @@ use std::{thread, vec};
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct NanometersApp {
+    /// Thread to capture audio data and process it.
     #[serde(skip)]
     pub(crate) audio_source: Option<Box<dyn AudioSource>>,
+    /// Audio source data buffer.
+    #[serde(skip)]
+    pub(crate) audio_source_buffer: Arc<Mutex<AudioSourceBuffer>>,
+    /// Calculate the frame time and FPS.
     #[serde(skip)]
     pub(crate) frame_history: FrameHistory,
 
+    /// Data channel between audio source and GUI.
     #[serde(skip)]
     pub(crate) tx_data: Option<Sender<SendData>>,
     #[serde(skip)]
     pub(crate) rx_data: Option<Receiver<SendData>>,
 
+    /// Setting channel between GUI and audio source.
     #[serde(skip)]
     pub(crate) tx_setting: Option<Sender<Setting>>,
     #[serde(skip)]
     pub(crate) rx_setting: Option<Receiver<Setting>>,
-
-    #[serde(skip)]
-    pub(crate) audio_source_buffer: Arc<Mutex<AudioSourceBuffer>>,
 
     pub(crate) setting: Setting,
     pub(crate) sample_rate: AtomicU32,
@@ -69,12 +73,12 @@ impl Default for NanometersApp {
 
         Self {
             audio_source,
+            audio_source_buffer,
             frame_history: Default::default(),
             tx_data: Some(tx_data),
             rx_data: Some(rx_data),
             tx_setting: Some(tx_setting),
             rx_setting: Some(rx_setting),
-            audio_source_buffer,
             setting,
             sample_rate: AtomicU32::new(48000),
             setting_switch: false,
@@ -93,8 +97,6 @@ impl Default for NanometersApp {
 impl NanometersApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // This is also where you can customize the look and feel of egui using
-        // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
         let version = env!("CARGO_PKG_VERSION").to_string();
 
         if let Some(storage) = cc.storage {
