@@ -95,7 +95,6 @@ pub fn get_callback(
                 if buf.spectrogram.ab {
                     if buf.spectrogram.a.index >= 2048 {
                         let mut spectrum_buffer = buf.spectrogram.clone();
-
                         process_spectrogram(
                             &mut buf,
                             &mut send_data,
@@ -270,10 +269,12 @@ fn process_spectrogram(
     raw_hann_dt: &mut [f32],
     raw_hann_t: &mut [f32],
 ) {
-    buf.spectrogram.image.drain(0..2048 * 2);
+    let resolution = buf.setting.spectrogram.resolution;
+    let speed = 1;
+    buf.spectrogram.image.drain(0..resolution * speed);
     buf.spectrogram
         .image
-        .extend(vec![Color32::TRANSPARENT; 2048 * 2]);
+        .extend(vec![Color32::TRANSPARENT; resolution * speed]);
     let mut real_planner = RealFftPlanner::<f32>::new();
     let r2c = real_planner.plan_fft_forward(2048);
     let mut spectrum = r2c.make_output_vec();
@@ -288,12 +289,14 @@ fn process_spectrogram(
         let fc_temp = (-(fft_xdt[i] * fft_x[i].conj()).im() / magsqrd[i]) + FREQFRAME_2048[i];
         let tc_temp = (fft_xt[i] * fft_x[i].conj()).re() / magsqrd[i];
 
-        if fc_temp > 10.0 && fc_temp < 24000.0 {
-            let image_x = fc_temp / 24000.0 * 2048.0;
-            let image_y = 3840.0 + tc_temp * 12.0;
-            let origin_color =
-                buf.spectrogram.image[image_x as usize + (image_y as usize) * 2048].a();
-            buf.spectrogram.image[image_x as usize + (image_y as usize) * 2048] =
+        if fc_temp > 0.0 && fc_temp < 22000.0 {
+            let image_x = fc_temp / 22000.0 * resolution as f32;
+            let image_y = 1920.0 + tc_temp * 20.0;
+            let origin_color = buf.spectrogram.image
+                [image_x.round() as usize + (image_y.round() as usize) * resolution]
+                .a();
+            buf.spectrogram.image
+                [image_x.round() as usize + (image_y.round() as usize) * resolution] =
                 Color32::from_rgba_unmultiplied(
                     buf.setting.theme.main.r(),
                     buf.setting.theme.main.g(),
@@ -305,6 +308,6 @@ fn process_spectrogram(
                 );
         }
     }
-    send_data.spectrogram_image = buf.spectrogram.image.clone();
+    send_data.spectrogram_image = buf.spectrogram.image[0..1920 * resolution].to_owned();
     buf.spectrogram.ab = !buf.spectrogram.ab;
 }

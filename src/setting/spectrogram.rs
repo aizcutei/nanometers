@@ -1,9 +1,14 @@
-use std::collections::VecDeque;
-
-use egui::{Color32, Pos2};
+use crate::utils::*;
+use egui::*;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{SpectrogramFrame, SpectrogramOneWindow, HANN_2048, HANN_DT_2048, HANN_T_2048};
+#[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum SpectrogramContrast {
+    #[default]
+    L,
+    M,
+    H,
+}
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SpectrogramOrientation {
@@ -26,12 +31,27 @@ pub enum SpectrogramCurve {
     Logarithmic,
 }
 
-#[derive(Default, Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct SpectrogramSetting {
     pub(crate) orientation: SpectrogramOrientation,
     pub(crate) mode: SpectrogramMode,
     pub(crate) curve: SpectrogramCurve,
+    pub(crate) contrast: SpectrogramContrast,
     pub(crate) brightness_boost: f64,
+    pub(crate) resolution: usize,
+}
+
+impl Default for SpectrogramSetting {
+    fn default() -> Self {
+        Self {
+            orientation: SpectrogramOrientation::H,
+            mode: SpectrogramMode::Sharp,
+            curve: SpectrogramCurve::Linear,
+            contrast: SpectrogramContrast::L,
+            brightness_boost: 0.05,
+            resolution: 2048,
+        }
+    }
 }
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]

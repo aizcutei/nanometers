@@ -176,7 +176,7 @@ impl SpectrogramCalcBuffer {
             ab: false,
             a: SpectrogramOneWindow::new(),
             b: SpectrogramOneWindow::new(),
-            image: vec![Color32::TRANSPARENT; 2048 * 3950],
+            image: vec![Color32::TRANSPARENT; 2048 * 3840],
         }
     }
 }

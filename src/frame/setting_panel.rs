@@ -170,6 +170,39 @@ impl NanometersApp {
                         self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     };
                 });
+                ui.horizontal(|ui| {
+                    ui.label("Contrast");
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.contrast,
+                            setting::SpectrogramContrast::L,
+                            "Low",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.contrast,
+                            setting::SpectrogramContrast::M,
+                            "Mid",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.contrast,
+                            setting::SpectrogramContrast::H,
+                            "High",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                });
                 if ui
                     .horizontal(|ui| {
                         ui.label("Brightness Boost");
