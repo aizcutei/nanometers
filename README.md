@@ -6,20 +6,31 @@
 
 # NanoMeters
 
-Crossplatform audio visualizer with Rust & WebGPU.
+Crossplatform audio visualizer with Rust.
+
+Aim for CPU/GPU/Memory friendly.
 
 A practice that mimics but not to replace the Minimeters.
 
-**Under development. Unstable. Not ready for use. Not responsible for loss of project files due to plugin crashes.**
+**⚠️ Under development. Unstable. Not responsible for loss of project files due to plugin or system crashes.**
 
-Use together with [nanometers-plugin](https://github.com/aizcutei/nanometers_plug) (VST3 & CLAP).
+Use together with [nanometers-plugin](https://github.com/aizcutei/nanometers_plug) (VST3 & CLAP) and [nanometers-au](https://github.com/aizcutei/nanometers_au) (AU is in plan).
 
 ---
+## Preview
 
-Preview:
+![nanometers](./static/example.gif)
 
-![nanometers](./static/Example.gif)
+---
+## Audio routing support
 
+||Audio Input/Microphone|Desktop Audio Capture|[NanometersServer Plugin](https://github.com/aizcutei/nanometers_plug)|
+|-|-|-|-|
+|Windows|🚧|✅ * Not compatible with ASIO drivers|✅|
+|macOS|🚧|✅ * macOS 13.0 Ventura or later only|✅ * only VST3 & CLAP|
+|Linux|🚧|✅ * No test yet|✅ * No test yet|
+
+---
 ### Testing locally
 
 Make sure you are using the latest version of stable rust by running `rustup update`.

@@ -4,10 +4,7 @@ use egui::*;
 
 impl NanometersApp {
     pub fn main_canvas(&mut self, ctx: &egui::Context) {
-        let full_frame = egui::Frame {
-            fill: ctx.style().visuals.window_fill(),
-            ..Default::default()
-        };
+        let full_frame = egui::Frame::default();
 
         egui::CentralPanel::default()
             .frame(full_frame)
@@ -72,9 +69,9 @@ impl NanometersApp {
         let mut update_iir_data = Vec::new();
         let mut update_db_data = DBData::new();
         let mut update_osc_data = OscilloscopeSendData::new();
-        let mut update_spectrogram_data = Vec::new();
+        let mut update_spectrogram_image = Vec::new();
 
-        self.rx.as_mut().unwrap().try_iter().for_each(|data| {
+        self.rx_data.as_mut().unwrap().try_iter().for_each(|data| {
             update_iir_data.extend_from_slice(&data.iir);
             update_db_data.l = data.db.l;
             update_db_data.r = data.db.r;
@@ -90,7 +87,7 @@ impl NanometersApp {
                 .extend_from_slice(&data.vectorscope.log);
             update_waveform_data.concat(&data.waveform);
             update_osc_data = data.oscilloscope;
-            update_spectrogram_data.extend_from_slice(&data.spectrogram);
+            update_spectrogram_image = data.spectrogram_image;
         });
 
         ui.ctx().request_repaint();
@@ -102,7 +99,7 @@ impl NanometersApp {
                     self.waveform_meter(&update_waveform_data, meter_rect, ui);
                 }
                 ModuleList::Spectrogram => {
-                    self.spectrogram_meter(meter_rect, ui);
+                    self.spectrogram_meter(update_spectrogram_image.clone(), meter_rect, ui);
                 }
                 ModuleList::Peak => {
                     self.peak_meter(&update_iir_data, &update_db_data, meter_rect, ui);
@@ -164,7 +161,7 @@ impl NanometersApp {
                     ui.ctx()
                         .send_viewport_cmd(ViewportCommand::InnerSize(new_size.into()));
                     ui.ctx()
-                        .send_viewport_cmd(ViewportCommand::MinInnerSize([800.0, 500.0].into()));
+                        .send_viewport_cmd(ViewportCommand::MinInnerSize([200.0, 500.0].into()));
                 }
 
                 if ui.button("PIN TOP").clicked() {
@@ -196,30 +193,32 @@ impl NanometersApp {
 
         setting_area_ui.vertical_centered_justified(|ui| {
             ui.separator();
-            Grid::new("Setting_ui").show(ui, |ui| {
-                self.modules_sequence_block(ui);
-                self.waveform_setting_block(ui);
-                self.vectorscope_settiing_block(ui);
-                ui.end_row();
+            egui::ScrollArea::horizontal().show(ui, |ui| {
+                Grid::new("Setting_ui").show(ui, |ui| {
+                    self.modules_sequence_block(ui);
+                    self.spectrogram_setting_block(ui);
+                    self.vectorscope_settiing_block(ui);
+                    ui.end_row();
 
-                self.spectrogram_setting_block(ui);
-                self.spectrum_setting_block(ui);
-                self.oscilloscope_setting_block(ui);
-                ui.end_row();
+                    self.waveform_setting_block(ui);
+                    self.spectrum_setting_block(ui);
+                    self.oscilloscope_setting_block(ui);
+                    ui.end_row();
 
-                self.device_setting_block(ui);
-                self.theme_setting_block(ui);
-                self.cpu_setting_block(ui);
-                ui.end_row();
+                    self.device_setting_block(ui);
+                    self.theme_setting_block(ui);
+                    self.cpu_setting_block(ui);
+                    ui.end_row();
+                });
             });
-
+            ui.separator();
             if ui.button("CLOSE SETTING").clicked() && self.setting_switch {
                 self.setting_switch = false;
                 let new_size = [setting_rect.max.x, setting_rect.max.y - 400.0];
                 ui.ctx()
                     .send_viewport_cmd(ViewportCommand::InnerSize(new_size.into()));
                 ui.ctx()
-                    .send_viewport_cmd(ViewportCommand::MinInnerSize([800.0, 100.0].into()));
+                    .send_viewport_cmd(ViewportCommand::MinInnerSize([200.0, 100.0].into()));
             }
         });
     }

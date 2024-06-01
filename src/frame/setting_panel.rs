@@ -126,40 +126,99 @@ impl NanometersApp {
                 });
                 ui.horizontal(|ui| {
                     ui.label("Mode");
-                    ui.selectable_value(
-                        &mut self.setting.spectrogram.mode,
-                        setting::SpectrogramMode::Sharp,
-                        "Sharp",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.spectrogram.mode,
-                        setting::SpectrogramMode::Classic,
-                        "Classic",
-                    );
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.mode,
+                            setting::SpectrogramMode::Sharp,
+                            "Sharp",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.mode,
+                            setting::SpectrogramMode::Classic,
+                            "Classic",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
                 });
                 ui.horizontal(|ui| {
                     ui.label("Curve");
-                    ui.selectable_value(
-                        &mut self.setting.spectrogram.curve,
-                        setting::SpectrogramCurve::Linear,
-                        "Linear",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.spectrogram.curve,
-                        setting::SpectrogramCurve::Logarithmic,
-                        "Logarithmic",
-                    );
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.curve,
+                            setting::SpectrogramCurve::Linear,
+                            "Linear",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.curve,
+                            setting::SpectrogramCurve::Logarithmic,
+                            "Logarithmic",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
                 });
                 ui.horizontal(|ui| {
-                    ui.label("Brightness Boost");
-                    ui.add(
-                        egui::Slider::new(
-                            &mut self.setting.spectrogram.brightness_boost,
-                            0.0..=1.0,
+                    ui.label("Contrast");
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.contrast,
+                            setting::SpectrogramContrast::L,
+                            "Low",
                         )
-                        .text(""),
-                    );
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.contrast,
+                            setting::SpectrogramContrast::M,
+                            "Mid",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.spectrogram.contrast,
+                            setting::SpectrogramContrast::H,
+                            "High",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
                 });
+                if ui
+                    .horizontal(|ui| {
+                        ui.label("Brightness Boost");
+                        ui.add(
+                            egui::Slider::new(
+                                &mut self.setting.spectrogram.brightness_boost,
+                                0.01..=1.0,
+                            )
+                            .text(""),
+                        );
+                    })
+                    .response
+                    .contains_pointer()
+                {
+                    self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                };
             });
         });
     }
@@ -205,11 +264,10 @@ impl NanometersApp {
                     .changed()
                 {
                     self.audio_source.as_mut().unwrap().stop();
-                    let tx = self.tx.clone().unwrap();
                     let callback = get_callback(
-                        tx,
+                        self.tx_data.clone().unwrap(),
+                        self.rx_setting.clone().unwrap(),
                         self.audio_source_buffer.clone(),
-                        self.audio_source_setting.clone(),
                     );
                     let mut system_capture = SystemCapture::new(callback);
                     system_capture.start();
@@ -224,11 +282,11 @@ impl NanometersApp {
                     .changed()
                 {
                     self.audio_source.as_mut().unwrap().stop();
-                    let tx = self.tx.clone().unwrap();
+
                     let callback = get_callback(
-                        tx,
+                        self.tx_data.clone().unwrap(),
+                        self.rx_setting.clone().unwrap(),
                         self.audio_source_buffer.clone(),
-                        self.audio_source_setting.clone(),
                     );
                     let mut plugin_client = PluginClient::new(callback);
                     plugin_client.start();
@@ -328,9 +386,11 @@ impl NanometersApp {
                     let column = &mut self.setting.sequence[to.col];
                     to.row = to.row.min(column.len());
                     column.insert(to.row, item);
-                    if let Ok(mut mutex) = self.audio_source_setting.try_lock() {
-                        mutex.sequence = self.setting.sequence.clone();
-                    }
+                    self.tx_setting
+                        .as_ref()
+                        .unwrap()
+                        .send(self.setting.clone())
+                        .unwrap();
                 }
             });
         });
@@ -566,6 +626,7 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::DARK_THEME;
                         ui.ctx().set_visuals(set_theme(self));
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::LIGHT_THEME, "Light")
@@ -573,6 +634,7 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::LIGHT_THEME;
                         ui.ctx().set_visuals(set_theme(self));
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::PINK_THEME, "Pink")
@@ -580,6 +642,7 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::PINK_THEME;
                         ui.ctx().set_visuals(set_theme(self));
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     }
                 });
             });

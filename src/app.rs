@@ -19,20 +19,27 @@ use std::{thread, vec};
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct NanometersApp {
+    /// Thread to capture audio data and process it.
     #[serde(skip)]
     pub(crate) audio_source: Option<Box<dyn AudioSource>>,
+    /// Audio source data buffer.
+    #[serde(skip)]
+    pub(crate) audio_source_buffer: Arc<Mutex<AudioSourceBuffer>>,
+    /// Calculate the frame time and FPS.
     #[serde(skip)]
     pub(crate) frame_history: FrameHistory,
 
+    /// Data channel between audio source and GUI.
     #[serde(skip)]
-    pub(crate) tx: Option<Sender<SendData>>,
+    pub(crate) tx_data: Option<Sender<SendData>>,
     #[serde(skip)]
-    pub(crate) rx: Option<Receiver<SendData>>,
+    pub(crate) rx_data: Option<Receiver<SendData>>,
 
+    /// Setting channel between GUI and audio source.
     #[serde(skip)]
-    pub(crate) audio_source_buffer: Arc<Mutex<AudioSourceBuffer>>,
+    pub(crate) tx_setting: Option<Sender<Setting>>,
     #[serde(skip)]
-    pub(crate) audio_source_setting: Arc<Mutex<Setting>>,
+    pub(crate) rx_setting: Option<Receiver<Setting>>,
 
     pub(crate) setting: Setting,
     pub(crate) sample_rate: AtomicU32,
@@ -51,32 +58,33 @@ pub struct NanometersApp {
 
 impl Default for NanometersApp {
     fn default() -> Self {
-        let (tx, rx) = unbounded();
-        // let (tx_setting, rx_setting) = unbounded();
+        let (tx_data, rx_data) = unbounded();
+        let (tx_setting, rx_setting) = unbounded();
         let audio_source_buffer = Arc::new(Mutex::new(AudioSourceBuffer::new()));
         let setting = Setting::default();
         let audio_source_setting = Arc::new(Mutex::new(setting.clone()));
         let mut system_capture = SystemCapture::new(get_callback(
-            tx.clone(),
+            tx_data.clone(),
+            rx_setting.clone(),
             audio_source_buffer.clone(),
-            audio_source_setting.clone(),
         ));
         system_capture.start();
         let audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
 
         Self {
             audio_source,
-            frame_history: Default::default(),
-            tx: Some(tx),
-            rx: Some(rx),
             audio_source_buffer,
-            audio_source_setting,
+            frame_history: Default::default(),
+            tx_data: Some(tx_data),
+            rx_data: Some(rx_data),
+            tx_setting: Some(tx_setting),
+            rx_setting: Some(rx_setting),
             setting,
             sample_rate: AtomicU32::new(48000),
             setting_switch: false,
             allways_on_top: false,
             meter_size: Rect::from_two_pos([0.0, 0.0].into(), [600.0, 200.0].into()),
-            meters_rects: vec![],
+            meters_rects: Vec::new(),
             waveform: Default::default(),
             peak: Default::default(),
             vectorscope: Default::default(),
@@ -89,35 +97,31 @@ impl Default for NanometersApp {
 impl NanometersApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // This is also where you can customize the look and feel of egui using
-        // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
         let version = env!("CARGO_PKG_VERSION").to_string();
 
         if let Some(storage) = cc.storage {
             let mut app: NanometersApp =
                 eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
             cc.egui_ctx.set_visuals(set_theme(&mut app));
-            app.audio_source_setting = Arc::new(Mutex::new(app.setting.clone()));
+            app.audio_source_buffer = Arc::new(Mutex::new(AudioSourceBuffer::new_with_setting(
+                app.setting.clone(),
+            )));
             match app.setting.audio_device.device {
                 AudioDevice::OutputCapture => {
-                    let tx = app.tx.clone().unwrap();
-                    let callback = get_callback(
-                        tx,
+                    let mut system_capture = SystemCapture::new(get_callback(
+                        app.tx_data.clone().unwrap(),
+                        app.rx_setting.clone().unwrap(),
                         app.audio_source_buffer.clone(),
-                        app.audio_source_setting.clone(),
-                    );
-                    let mut system_capture = SystemCapture::new(callback);
+                    ));
                     system_capture.start();
                     app.audio_source = Some(Box::new(system_capture) as Box<dyn AudioSource>);
                 }
                 AudioDevice::PluginCapture => {
-                    let tx = app.tx.clone().unwrap();
-                    let callback = get_callback(
-                        tx,
+                    let mut plugin_client = PluginClient::new(get_callback(
+                        app.tx_data.clone().unwrap(),
+                        app.rx_setting.clone().unwrap(),
                         app.audio_source_buffer.clone(),
-                        app.audio_source_setting.clone(),
-                    );
-                    let mut plugin_client = PluginClient::new(callback);
+                    ));
                     plugin_client.start();
                     app.audio_source = Some(Box::new(plugin_client) as Box<dyn AudioSource>);
                 }

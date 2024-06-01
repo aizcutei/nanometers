@@ -1,6 +1,6 @@
 use crate::{setting::*, utils::*};
-use crossbeam_channel::Sender;
-use egui::Pos2;
+use crossbeam_channel::{Receiver, Sender};
+use egui::{Color32, Pos2};
 use realfft::RealFftPlanner;
 use rustfft::num_complex::ComplexFloat;
 use std::sync::{Arc, Mutex};
@@ -8,22 +8,22 @@ use std::sync::{Arc, Mutex};
 const SQRT_2: f32 = 1.4142135;
 
 pub fn get_callback(
-    tx: Sender<SendData>,
+    tx_data: Sender<SendData>,
+    rx_setting: Receiver<Setting>,
     buffer: Arc<Mutex<AudioSourceBuffer>>,
-    setting: Arc<Mutex<Setting>>,
 ) -> Box<dyn FnMut(Vec<Vec<f32>>) + Send + Sync> {
     Box::new(move |data: Vec<Vec<f32>>| {
         #[cfg(feature = "puffin")]
         puffin::profile_scope!("callback");
 
         let mut buf = buffer.lock().unwrap();
-        let setting = setting.lock().unwrap();
-        let waveform_on = setting.sequence[1].contains(&ModuleList::Waveform);
-        let peak_on = setting.sequence[1].contains(&ModuleList::Peak);
-        let stereo_on = setting.sequence[1].contains(&ModuleList::Vectorscope);
-        let spectrum_on = setting.sequence[1].contains(&ModuleList::Spectrum);
-        let spectrogram_on = setting.sequence[1].contains(&ModuleList::Spectrogram);
-        let oscilloscope_on = setting.sequence[1].contains(&ModuleList::Oscilloscope);
+        rx_setting.try_iter().for_each(|s| buf.setting = s);
+        let waveform_on = buf.setting.sequence[1].contains(&ModuleList::Waveform);
+        let peak_on = buf.setting.sequence[1].contains(&ModuleList::Peak);
+        let stereo_on = buf.setting.sequence[1].contains(&ModuleList::Vectorscope);
+        let spectrum_on = buf.setting.sequence[1].contains(&ModuleList::Spectrum);
+        let spectrogram_on = buf.setting.sequence[1].contains(&ModuleList::Spectrogram);
+        let oscilloscope_on = buf.setting.sequence[1].contains(&ModuleList::Oscilloscope);
 
         let waveform_block_length = 280;
         let stereo_block_length = 1;
@@ -67,80 +67,59 @@ pub fn get_callback(
             buf.high_raw.m.push(high_m);
             buf.high_raw.s.push(high_s);
 
-            let spectrogram_index = buf.spectrogram.index.clone();
-            buf.spectrogram
-                .raw_hann
-                .push(m * HANN_2048[spectrogram_index]);
-            buf.spectrogram
-                .raw_hann_dt
-                .push(m * HANN_DT_2048[spectrogram_index]);
-            buf.spectrogram
-                .raw_hann_t
-                .push(m * HANN_T_2048[spectrogram_index]);
-            buf.spectrogram.index += 1;
             let raw_len = buf.raw.l.len();
 
-            if buf.spectrogram.index >= 2048 {
-                if spectrogram_on {
-                    let mut spectrum_buffer = buf.spectrogram.clone();
-
-                    let mut real_planner = RealFftPlanner::<f32>::new();
-                    let r2c = real_planner.plan_fft_forward(2048);
-                    let mut spectrum = r2c.make_output_vec();
-                    r2c.process(&mut spectrum_buffer.raw_hann, &mut spectrum)
-                        .unwrap();
-                    let x = spectrum.clone();
-                    let magsqrd: Vec<f32> = x.iter().map(|i| i.norm_sqr()).collect();
-                    let magsqrd_max = magsqrd
-                        .iter()
-                        .max_by(|a, b| a.partial_cmp(b).unwrap())
-                        .unwrap_or(&0.0)
-                        .sqrt();
-                    r2c.process(&mut spectrum_buffer.raw_hann_dt, &mut spectrum)
-                        .unwrap();
-                    let xdt = spectrum.clone();
-                    r2c.process(&mut spectrum_buffer.raw_hann_t, &mut spectrum)
-                        .unwrap();
-                    let xt = spectrum.clone();
-
-                    let mut forigin = vec![];
-                    let mut fcorrect = vec![];
-                    let mut tcorrect = vec![];
-                    let mut ccorrect = vec![];
-                    for i in 0..1025 {
-                        if magsqrd[i] > 0.0 {
-                            let fc_temp =
-                                (-(xdt[i] * x[i].conj()).im() / magsqrd[i]) + FREQFRAME_2048[i];
-                            fcorrect.push(if fc_temp > 0.0 && fc_temp < 24000.0 {
-                                fc_temp
-                            } else {
-                                0.0
-                            });
-                            tcorrect.push((xt[i] * x[i].conj()).re() / magsqrd[i]);
-                            let c_temp = (x[i].norm() / magsqrd_max).log10() * 20.0;
-                            ccorrect.push(
-                                if fc_temp > 0.0 && fc_temp < 24000.0 && c_temp > -60.0 {
-                                    c_temp + 60.0
-                                } else {
-                                    0.0
-                                },
-                            );
-                        } else {
-                            fcorrect.push(0.0);
-                            tcorrect.push(0.0);
-                            ccorrect.push(0.0);
-                        }
-                        forigin.push(magsqrd[i].sqrt());
+            if spectrogram_on || spectrum_on {
+                if buf.spectrogram.ab {
+                    let spectrogram_index = buf.spectrogram.a.index.clone();
+                    if spectrogram_index >= 1024 {
+                        updata_spectrogram_window(
+                            &mut buf.spectrogram.b,
+                            spectrogram_index - 1024,
+                            m,
+                        );
                     }
-
-                    send_data.spectrogram.push(SpectrogramFrame {
-                        f: forigin,
-                        fc: fcorrect,
-                        tc: tcorrect,
-                        cc: ccorrect,
-                    });
+                    updata_spectrogram_window(&mut buf.spectrogram.a, spectrogram_index, m);
+                } else {
+                    let spectrogram_index = buf.spectrogram.b.index.clone();
+                    if spectrogram_index >= 1024 {
+                        updata_spectrogram_window(
+                            &mut buf.spectrogram.a,
+                            spectrogram_index - 1024,
+                            m,
+                        );
+                    }
+                    updata_spectrogram_window(&mut buf.spectrogram.b, spectrogram_index, m);
                 }
-                buf.spectrogram.reset();
+
+                if buf.spectrogram.ab {
+                    if buf.spectrogram.a.index >= 2048 {
+                        let mut spectrum_buffer = buf.spectrogram.clone();
+                        process_spectrogram(
+                            &mut buf,
+                            &mut send_data,
+                            &mut spectrum_buffer.a.raw_hann,
+                            &mut spectrum_buffer.a.raw_hann_dt,
+                            &mut spectrum_buffer.a.raw_hann_t,
+                        );
+                        buf.spectrogram.a.reset();
+                    }
+                } else {
+                    if buf.spectrogram.b.index >= 2048 {
+                        let mut spectrum_buffer = buf.spectrogram.clone();
+                        process_spectrogram(
+                            &mut buf,
+                            &mut send_data,
+                            &mut spectrum_buffer.b.raw_hann,
+                            &mut spectrum_buffer.b.raw_hann_dt,
+                            &mut spectrum_buffer.b.raw_hann_t,
+                        );
+                        buf.spectrogram.b.reset();
+                    }
+                }
+            } else {
+                buf.spectrogram.a.reset();
+                buf.spectrogram.b.reset();
             }
 
             if oscilloscope_on {
@@ -279,6 +258,56 @@ pub fn get_callback(
             send_data.db.r = gain_to_db(amp_r);
         }
 
-        tx.send(send_data).unwrap();
+        tx_data.send(send_data).unwrap();
     })
+}
+
+fn process_spectrogram(
+    buf: &mut AudioSourceBuffer,
+    send_data: &mut SendData,
+    raw_hann: &mut [f32],
+    raw_hann_dt: &mut [f32],
+    raw_hann_t: &mut [f32],
+) {
+    let resolution = buf.setting.spectrogram.resolution;
+    let speed = 1;
+    buf.spectrogram.image.drain(0..resolution * speed);
+    buf.spectrogram
+        .image
+        .extend(vec![Color32::TRANSPARENT; resolution * speed]);
+    let mut real_planner = RealFftPlanner::<f32>::new();
+    let r2c = real_planner.plan_fft_forward(2048);
+    let mut spectrum = r2c.make_output_vec();
+    r2c.process(raw_hann, &mut spectrum).unwrap();
+    let fft_x = spectrum.clone();
+    let magsqrd: Vec<_> = fft_x.iter().map(|i| i.norm_sqr()).collect();
+    r2c.process(raw_hann_dt, &mut spectrum).unwrap();
+    let fft_xdt = spectrum.clone();
+    r2c.process(raw_hann_t, &mut spectrum).unwrap();
+    let fft_xt = spectrum.clone();
+    for i in 0..1025 {
+        let fc_temp = (-(fft_xdt[i] * fft_x[i].conj()).im() / magsqrd[i]) + FREQFRAME_2048[i];
+        let tc_temp = (fft_xt[i] * fft_x[i].conj()).re() / magsqrd[i];
+
+        if fc_temp > 0.0 && fc_temp < 22000.0 {
+            let image_x = fc_temp / 22000.0 * resolution as f32;
+            let image_y = 1920.0 + tc_temp * 20.0;
+            let origin_color = buf.spectrogram.image
+                [image_x.round() as usize + (image_y.round() as usize) * resolution]
+                .a();
+            buf.spectrogram.image
+                [image_x.round() as usize + (image_y.round() as usize) * resolution] =
+                Color32::from_rgba_unmultiplied(
+                    buf.setting.theme.main.r(),
+                    buf.setting.theme.main.g(),
+                    buf.setting.theme.main.b(),
+                    origin_color.wrapping_add(
+                        (255.0 * fft_x[i].norm() * buf.setting.spectrogram.brightness_boost as f32)
+                            as u8,
+                    ),
+                );
+        }
+    }
+    send_data.spectrogram_image = buf.spectrogram.image[0..1920 * resolution].to_owned();
+    buf.spectrogram.ab = !buf.spectrogram.ab;
 }

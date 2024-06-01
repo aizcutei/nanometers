@@ -1,6 +1,6 @@
 use crate::setting::*;
 use egui::*;
-use std::fmt::Display;
+use std::{collections::binary_heap, fmt::Display};
 
 #[derive(Debug, Clone, Default)]
 pub struct RawData {
@@ -137,14 +137,14 @@ impl VectorscopeCalcBuffer {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct SpectrumCalcBuffer {
+pub struct SpectrogramOneWindow {
     pub index: usize,
     pub raw_hann: Vec<f32>,
     pub raw_hann_dt: Vec<f32>,
     pub raw_hann_t: Vec<f32>,
 }
 
-impl SpectrumCalcBuffer {
+impl SpectrogramOneWindow {
     pub fn new() -> Self {
         Self {
             index: 0,
@@ -163,6 +163,25 @@ impl SpectrumCalcBuffer {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct SpectrogramCalcBuffer {
+    pub ab: bool,
+    pub a: SpectrogramOneWindow,
+    pub b: SpectrogramOneWindow,
+    pub image: Vec<Color32>,
+}
+
+impl SpectrogramCalcBuffer {
+    pub fn new() -> Self {
+        Self {
+            ab: false,
+            a: SpectrogramOneWindow::new(),
+            b: SpectrogramOneWindow::new(),
+            image: vec![Color32::TRANSPARENT; 2048 * 3840],
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct AudioSourceBuffer {
     pub fft_2048_index: usize,
     pub raw: RawData,
@@ -173,7 +192,8 @@ pub struct AudioSourceBuffer {
     pub peak: PeakCalcBuffer,
     pub waveform: WaveformCalcBuffer,
     pub stereo: VectorscopeCalcBuffer,
-    pub spectrogram: SpectrumCalcBuffer,
+    pub spectrogram: SpectrogramCalcBuffer,
+    pub setting: Setting,
 }
 
 impl AudioSourceBuffer {
@@ -188,7 +208,24 @@ impl AudioSourceBuffer {
             peak: PeakCalcBuffer::new(),
             waveform: WaveformCalcBuffer::new(),
             stereo: VectorscopeCalcBuffer::new(),
-            spectrogram: SpectrumCalcBuffer::new(),
+            spectrogram: SpectrogramCalcBuffer::new(),
+            setting: Setting::default(),
+        }
+    }
+
+    pub fn new_with_setting(setting: Setting) -> Self {
+        Self {
+            fft_2048_index: 0,
+            raw: RawData::new(),
+            low_raw: RawData::new(),
+            mid_raw: RawData::new(),
+            high_raw: RawData::new(),
+            multiband: MultibandCalcBuffer::new(),
+            peak: PeakCalcBuffer::new(),
+            waveform: WaveformCalcBuffer::new(),
+            stereo: VectorscopeCalcBuffer::new(),
+            spectrogram: SpectrogramCalcBuffer::new(),
+            setting,
         }
     }
 }
@@ -244,9 +281,9 @@ pub struct SendData {
     pub iir: Vec<f32>,
     pub db: DBData,
     pub vectorscope: VectorscopeSendData,
-    pub spectrogram: Vec<SpectrogramFrame>,
     pub spectrum: SpectrumSendData,
     pub oscilloscope: OscilloscopeSendData,
+    pub spectrogram_image: Vec<Color32>,
 }
 
 impl SendData {
@@ -256,9 +293,9 @@ impl SendData {
             iir: Vec::new(),
             db: DBData::new(),
             vectorscope: VectorscopeSendData::new(),
-            spectrogram: Vec::new(),
             spectrum: SpectrumSendData::new(),
             oscilloscope: OscilloscopeSendData::new(),
+            spectrogram_image: Vec::new(),
         }
     }
 }
