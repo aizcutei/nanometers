@@ -47,3 +47,11 @@ pub fn timeramphann(len: isize) -> Vec<f64> {
         })
         .collect()
 }
+
+pub fn framesequence(len: usize) -> Vec<f64> {
+    let mut result = vec![];
+    for i in 0..len {
+        result.push(i as f64 / len as f64 * FS);
+    }
+    result
+}

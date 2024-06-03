@@ -70,6 +70,7 @@ impl NanometersApp {
         let mut update_db_data = DBData::new();
         let mut update_osc_data = OscilloscopeSendData::new();
         let mut update_spectrogram_image = Vec::new();
+        let mut update_spectrum_data = RawData::new();
 
         self.rx_data.as_mut().unwrap().try_iter().for_each(|data| {
             update_iir_data.extend_from_slice(&data.iir);
@@ -88,6 +89,7 @@ impl NanometersApp {
             update_waveform_data.concat(&data.waveform);
             update_osc_data = data.oscilloscope;
             update_spectrogram_image = data.spectrogram_image;
+            update_spectrum_data = data.spectrum;
         });
 
         ui.ctx().request_repaint();
@@ -108,7 +110,7 @@ impl NanometersApp {
                     self.oscilloscope_meter(&update_osc_data, meter_rect, ui);
                 }
                 ModuleList::Spectrum => {
-                    self.spectrum_meter(meter_rect, ui);
+                    self.spectrum_meter(&update_spectrum_data, meter_rect, ui);
                 }
                 ModuleList::Vectorscope => {
                     self.vectorscope_meter(&update_stereogram_data, meter_rect, ui);

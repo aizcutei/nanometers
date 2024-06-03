@@ -18,8 +18,8 @@ impl NanometersApp {
         let ppp = ui.ctx().pixels_per_point();
         let width = (rect.width()) as usize;
         let height = (rect.height()) as usize;
-        let resolution = self.setting.spectrogram.resolution;
-
+        let resolution = 2048;
+        let speed = 1;
         ui.painter().rect_filled(rect, 0.0, self.setting.theme.bg);
         // Calculate image
 
@@ -27,9 +27,9 @@ impl NanometersApp {
             SpectrogramOrientation::H => {
                 if !image.is_empty() {
                     let colorimage = ColorImage {
-                        size: [resolution, (width / 4) as usize],
+                        size: [resolution, (width / speed) as usize],
                         pixels: image
-                            [(1920 - (width / 4) as usize) * resolution..1920 * resolution]
+                            [(1920 - (width / speed) as usize) * resolution..1920 * resolution]
                             .to_owned(),
                     };
                     let texture =
@@ -54,9 +54,9 @@ impl NanometersApp {
             SpectrogramOrientation::V => {
                 if !image.is_empty() {
                     let colorimage = ColorImage {
-                        size: [resolution, (height / 4) as usize],
+                        size: [resolution, (height / speed) as usize],
                         pixels: image
-                            [(1920 - (height / 4) as usize) * resolution..1920 * resolution]
+                            [(1920 - (height / speed) as usize) * resolution..1920 * resolution]
                             .to_owned(),
                     };
                     let texture =

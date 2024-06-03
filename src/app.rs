@@ -54,6 +54,7 @@ pub struct NanometersApp {
     pub(crate) vectorscope: Vectorscope,
     pub(crate) spectrogram: Spectrogram,
     pub(crate) oscilloscope: Oscilloscope,
+    pub(crate) spectrum: Spectrum,
 }
 
 impl Default for NanometersApp {
@@ -84,12 +85,13 @@ impl Default for NanometersApp {
             setting_switch: false,
             allways_on_top: false,
             meter_size: Rect::from_two_pos([0.0, 0.0].into(), [600.0, 200.0].into()),
-            meters_rects: Vec::new(),
-            waveform: Default::default(),
-            peak: Default::default(),
-            vectorscope: Default::default(),
-            spectrogram: Default::default(),
-            oscilloscope: Default::default(),
+            meters_rects: vec![],
+            waveform: Waveform::default(),
+            peak: Peak::default(),
+            vectorscope: Vectorscope::default(),
+            spectrogram: Spectrogram::default(),
+            oscilloscope: Oscilloscope::default(),
+            spectrum: Spectrum::default(),
         }
     }
 }

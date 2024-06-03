@@ -595,6 +595,7 @@ impl NanometersApp {
                                     &mut self.setting.spectrum.ref_line,
                                     0.0..=22000.0,
                                 )
+                                .step_by(1.0)
                                 .text("Hz"),
                             );
                         });

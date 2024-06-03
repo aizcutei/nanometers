@@ -5,8 +5,11 @@ use std::collections::VecDeque;
 pub struct Peak {
     pub(crate) l: f32,
     pub(crate) r: f32,
+    #[serde(skip)]
     pub(crate) plot_l: f32,
+    #[serde(skip)]
     pub(crate) plot_r: f32,
+    #[serde(skip)]
     pub(crate) lufs: f32,
     #[serde(skip)]
     pub(crate) past_1500ms: VecDeque<f32>,
