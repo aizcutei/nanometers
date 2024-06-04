@@ -78,7 +78,7 @@ impl NanometersApp {
         let mut wave_0_points = Vec::new();
         let mut wave_1_points = Vec::new();
         if !data.l.is_empty() {
-            println!("{:?}", data.l);
+            // println!("{:?}", data.l[0]);
             for i in 0..2049 {
                 if data.l[i] > self.spectrum.ch0[i] {
                     self.spectrum.ch0[i] = data.l[i];
@@ -272,7 +272,7 @@ fn ref_lines(ui: &mut Ui, rect: Rect, width: f32, color: Color32) -> Vec<Shape> 
             fonts,
             pos2(rect.left() + 0.5983756514 * rect.width(), 5.0),
             Align2::CENTER_CENTER,
-            "1000Hz",
+            "1kHz",
             FontId::monospace(9.0),
             color,
         ));
@@ -345,7 +345,7 @@ fn ref_lines(ui: &mut Ui, rect: Rect, width: f32, color: Color32) -> Vec<Shape> 
             fonts,
             pos2(rect.left() + 0.8975634771 * rect.width(), 5.0),
             Align2::CENTER_CENTER,
-            "10000Hz",
+            "10kHz",
             FontId::monospace(9.0),
             color,
         ));
@@ -363,9 +363,13 @@ fn ref_lines(ui: &mut Ui, rect: Rect, width: f32, color: Color32) -> Vec<Shape> 
 fn freq_to_pos(rect: Rect) -> Vec<f32> {
     let mut pos = Vec::with_capacity(2049);
     for i in 0..2049 {
-        pos.push(
-            rect.left() + 0.2991878257 * (((i - 1) as f32 * 23.4375).log10() - 1.0) * rect.width(),
-        );
+        if i == 0 {
+            pos.push(rect.left());
+        } else {
+            pos.push(
+                rect.left() + 0.2991878257 * ((i as f32 * 11.71875).log10() - 1.0) * rect.width(),
+            );
+        }
     }
     pos
 }

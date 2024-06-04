@@ -1,6 +1,6 @@
 <p align=center>
   <picture>
-    <img alt="nanometers" title="Nanometers" src="assets/icon-1024.png" width=200>
+    <img alt="nanometers" title="Nanometers" src="./assets/icon-1024.png" width=200>
   </picture>
 </p>
 
@@ -19,7 +19,19 @@ Use together with [nanometers-plugin](https://github.com/aizcutei/nanometers_plu
 ---
 ## Preview
 
-![nanometers](./static/example.gif)
+![demo1](./static/demo1.png)
+![demo2](./static/demo2.png)
+![demo3](./static/demo3.png)
+
+
+<details>
+<summary>More:</summary>
+
+![nanometers](./static/Example.gif)
+![demo4](./static/demo4.png)
+![demo5](./static/demo5.png)
+![demo6](./static/demo6.png)
+</details>
 
 ---
 ## Audio routing support
@@ -31,6 +43,19 @@ Use together with [nanometers-plugin](https://github.com/aizcutei/nanometers_plu
 |Linux|🚧|✅ * No test yet|✅ * No test yet|
 
 ---
+
+### Self build
+
+You should have Rust installed. If not, install it from [here](https://www.rust-lang.org/tools/install).
+
+Clone the repository:
+
+`git clone`
+
+Build the project:
+
+`cargo build --release`
+
 ### Testing locally
 
 Make sure you are using the latest version of stable rust by running `rustup update`.

@@ -510,7 +510,7 @@ impl NanometersApp {
                         ui.horizontal(|ui| {
                             ui.label("Smoothing");
                             ui.add(
-                                egui::Slider::new(&mut self.setting.spectrum.smoothing, 0.0..=1.25)
+                                egui::Slider::new(&mut self.setting.spectrum.smoothing, 0.0..=0.99)
                                     .text(""),
                             );
                         });

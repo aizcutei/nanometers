@@ -162,7 +162,7 @@ impl SpectrogramOneWindow {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct SpectrogramCalcBuffer {
     pub ab: bool,
     pub a: SpectrogramOneWindow,
@@ -176,8 +176,14 @@ impl SpectrogramCalcBuffer {
             ab: false,
             a: SpectrogramOneWindow::new(),
             b: SpectrogramOneWindow::new(),
-            image: vec![Color32::TRANSPARENT; 4096 * 4096],
+            image: vec![Color32::TRANSPARENT; 4000 * 4000],
         }
+    }
+}
+
+impl Default for SpectrogramCalcBuffer {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

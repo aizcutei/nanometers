@@ -2,7 +2,7 @@ use crate::{setting::*, utils::*};
 use crossbeam_channel::{Receiver, Sender};
 use egui::{Color32, Pos2};
 use realfft::RealFftPlanner;
-use rustfft::num_complex::ComplexFloat;
+use rustfft::num_complex::{Complex, ComplexFloat};
 use std::sync::{Arc, Mutex};
 
 const SQRT_2: f32 = 1.4142135;
@@ -40,6 +40,10 @@ pub fn get_callback(
             let r = data[1][i];
             let m = (l + r) / 2.0;
             let s = (l - r) / 2.0;
+            buf.raw.l.push(l);
+            buf.raw.r.push(r);
+            buf.raw.m.push(m);
+            buf.raw.s.push(s);
 
             let raw_len = buf.raw.l.len();
 
@@ -215,10 +219,6 @@ pub fn get_callback(
                 let high_r = multiband_high_filter(r, &mut buf.multiband.high_buf);
                 let high_m = multiband_high_filter(m, &mut buf.multiband.high_buf);
                 let high_s = multiband_high_filter(s, &mut buf.multiband.high_buf);
-                buf.raw.l.push(l);
-                buf.raw.r.push(r);
-                buf.raw.m.push(m);
-                buf.raw.s.push(s);
                 buf.low_raw.l.push(low_l);
                 buf.low_raw.r.push(low_r);
                 buf.low_raw.m.push(low_m);
@@ -400,17 +400,21 @@ fn process_spectrum(buf: &mut AudioSourceBuffer, send_data: &mut SendData, data:
             data.l.extend_from_slice(&[0.0; 2048]);
             data.r.extend_from_slice(&[0.0; 2048]);
             r2c.process(&mut data.l, &mut spectrum).unwrap();
-            send_data.spectrum.l = spectrum.clone().iter().map(|i| i.norm()).collect();
+            send_data.spectrum.l = spectrum.clone().iter().map(|i| amp_to_db(i)).collect();
             r2c.process(&mut data.r, &mut spectrum).unwrap();
-            send_data.spectrum.r = spectrum.clone().iter().map(|i| i.norm()).collect();
+            send_data.spectrum.r = spectrum.clone().iter().map(|i| amp_to_db(i)).collect();
         }
         SpectrumChannel::MS => {
             data.m.extend_from_slice(&[0.0; 2048]);
             data.s.extend_from_slice(&[0.0; 2048]);
             r2c.process(&mut data.m, &mut spectrum).unwrap();
-            send_data.spectrum.l = spectrum.clone().iter().map(|i| i.norm()).collect();
+            send_data.spectrum.l = spectrum.clone().iter().map(|i| amp_to_db(i)).collect();
             r2c.process(&mut data.s, &mut spectrum).unwrap();
-            send_data.spectrum.r = spectrum.clone().iter().map(|i| i.norm()).collect();
+            send_data.spectrum.r = spectrum.clone().iter().map(|i| amp_to_db(i)).collect();
         }
     }
+}
+
+fn amp_to_db(amp: &Complex<f32>) -> f32 {
+    ((amp.norm() / 2048.0).log10() * 20.0 + 150.0) / 150.0
 }
