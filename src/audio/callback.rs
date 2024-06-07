@@ -206,7 +206,7 @@ pub fn get_callback(
             }
 
             if vector_on {
-                // Stereo
+                // Vector
                 let low_l = multiband_low_filter(l, &mut buf.multiband.low_buf);
                 let low_r = multiband_low_filter(r, &mut buf.multiband.low_buf);
                 let low_m = multiband_low_filter(m, &mut buf.multiband.low_buf);
@@ -219,42 +219,87 @@ pub fn get_callback(
                 let high_r = multiband_high_filter(r, &mut buf.multiband.high_buf);
                 let high_m = multiband_high_filter(m, &mut buf.multiband.high_buf);
                 let high_s = multiband_high_filter(s, &mut buf.multiband.high_buf);
-                buf.low_raw.l.push(low_l);
-                buf.low_raw.r.push(low_r);
-                buf.low_raw.m.push(low_m);
-                buf.low_raw.s.push(low_s);
-                buf.mid_raw.l.push(mid_l);
-                buf.mid_raw.r.push(mid_r);
-                buf.mid_raw.m.push(mid_m);
-                buf.mid_raw.s.push(mid_s);
-                buf.high_raw.l.push(high_l);
-                buf.high_raw.r.push(high_r);
-                buf.high_raw.m.push(high_m);
-                buf.high_raw.s.push(high_s);
-                buf.stereo.update(l, r);
-                if buf.stereo.index >= vector_block_length {
-                    buf.stereo.index = 0;
-                    send_data.vectorscope.lissa.push(Pos2::new(l, r));
-                    send_data
-                        .vectorscope
-                        .linear
-                        .push(Pos2::new(-SQRT_2 * s, -SQRT_2 * m));
+                // buf.low_raw.l.push(low_l);
+                // buf.low_raw.r.push(low_r);
+                // buf.low_raw.m.push(low_m);
+                // buf.low_raw.s.push(low_s);
+                // buf.mid_raw.l.push(mid_l);
+                // buf.mid_raw.r.push(mid_r);
+                // buf.mid_raw.m.push(mid_m);
+                // buf.mid_raw.s.push(mid_s);
+                // buf.high_raw.l.push(high_l);
+                // buf.high_raw.r.push(high_r);
+                // buf.high_raw.m.push(high_m);
+                // buf.high_raw.s.push(high_s);
+                buf.vector
+                    .update(l, r, low_l, low_r, mid_l, mid_r, high_l, high_r);
 
-                    let length = (l * l + r * r).sqrt();
-                    let log_x = if length.log10() >= -3.0 {
-                        (length.log10() / 3.0 + 1.0) * l / length
-                    } else {
-                        0.0
-                    };
-                    let log_y = if length.log10() >= -3.0 {
-                        (length.log10() / 3.0 + 1.0) * r / length
-                    } else {
-                        0.0
-                    };
-                    send_data.vectorscope.log.push(Pos2::new(
-                        0.7071067812 * (log_y - log_x),
-                        -0.7071067812 * (log_x + log_y),
-                    ));
+                match buf.setting.vectorscope.mode {
+                    VectorscopeMode::Linear => match buf.setting.vectorscope.color {
+                        VectorscopeColor::Static => {
+                            send_data
+                                .vectorscope
+                                .linear
+                                .push(Pos2::new(-SQRT_2 * s, -SQRT_2 * m));
+                        }
+                        VectorscopeColor::MultiBand => {}
+                        VectorscopeColor::RGB => {
+                            if buf.vector.index >= vector_block_length {
+                                buf.vector.index = 0;
+                                send_data
+                                    .vectorscope
+                                    .r
+                                    .push(Pos2::new(-SQRT_2 * low_s, -SQRT_2 * low_m));
+                                send_data
+                                    .vectorscope
+                                    .g
+                                    .push(Pos2::new(-SQRT_2 * mid_s, -SQRT_2 * mid_m));
+                                send_data
+                                    .vectorscope
+                                    .b
+                                    .push(Pos2::new(-SQRT_2 * high_s, -SQRT_2 * high_m));
+                            }
+                        }
+                    },
+                    VectorscopeMode::Lissajous => match buf.setting.vectorscope.color {
+                        VectorscopeColor::Static => {
+                            send_data.vectorscope.lissa.push(Pos2::new(l, r));
+                        }
+                        VectorscopeColor::MultiBand => {}
+                        VectorscopeColor::RGB => {
+                            if buf.vector.index >= vector_block_length {
+                                buf.vector.index = 0;
+                                send_data.vectorscope.r.push(Pos2::new(low_l, low_r));
+                                send_data.vectorscope.g.push(Pos2::new(mid_l, mid_r));
+                                send_data.vectorscope.b.push(Pos2::new(high_l, high_r));
+                            }
+                        }
+                    },
+                    VectorscopeMode::Logarithmic => match buf.setting.vectorscope.color {
+                        VectorscopeColor::Static => {
+                            let length = (l * l + r * r).sqrt();
+                            let log_x = if length.log10() >= -3.0 {
+                                (length.log10() / 3.0 + 1.0) * l / length
+                            } else {
+                                0.0
+                            };
+                            let log_y = if length.log10() >= -3.0 {
+                                (length.log10() / 3.0 + 1.0) * r / length
+                            } else {
+                                0.0
+                            };
+                            send_data.vectorscope.log.push(Pos2::new(
+                                0.7071067812 * (log_y - log_x),
+                                -0.7071067812 * (log_x + log_y),
+                            ));
+                        }
+                        VectorscopeColor::MultiBand => {}
+                        VectorscopeColor::RGB => {
+                            if buf.vector.index >= vector_block_length {
+                                buf.vector.index = 0;
+                            }
+                        }
+                    },
                 }
             }
 
@@ -277,18 +322,20 @@ pub fn get_callback(
 
             if raw_len >= 8192 {
                 buf.raw.keep_last(4096);
-                buf.low_raw.keep_last(4096);
-                buf.mid_raw.keep_last(4096);
-                buf.high_raw.keep_last(4096);
+                // buf.low_raw.keep_last(4096);
+                // buf.mid_raw.keep_last(4096);
+                // buf.high_raw.keep_last(4096);
             }
         }
 
         // Send data
-
         if vector_on {
-            // Stereo
-            send_data.vectorscope.max = buf.stereo.max;
-            buf.stereo.max = f32::NEG_INFINITY;
+            // Vector
+            send_data.vectorscope.max = buf.vector.max;
+            send_data.vectorscope.r_max = buf.vector.r_max;
+            send_data.vectorscope.g_max = buf.vector.g_max;
+            send_data.vectorscope.b_max = buf.vector.b_max;
+            buf.vector.reset();
         }
 
         if peak_on {

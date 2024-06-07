@@ -100,18 +100,30 @@ impl MultibandCalcBuffer {
 #[derive(Debug, Clone, Default)]
 pub struct VectorscopeSendData {
     pub max: f32,
+    pub r_max: f32,
+    pub g_max: f32,
+    pub b_max: f32,
     pub lissa: Vec<Pos2>,
     pub log: Vec<Pos2>,
     pub linear: Vec<Pos2>,
+    pub r: Vec<Pos2>,
+    pub g: Vec<Pos2>,
+    pub b: Vec<Pos2>,
 }
 
 impl VectorscopeSendData {
     pub fn new() -> Self {
         Self {
             max: f32::NEG_INFINITY,
+            r_max: f32::NEG_INFINITY,
+            g_max: f32::NEG_INFINITY,
+            b_max: f32::NEG_INFINITY,
             lissa: Vec::new(),
             log: Vec::new(),
             linear: Vec::new(),
+            r: Vec::new(),
+            g: Vec::new(),
+            b: Vec::new(),
         }
     }
 }
@@ -120,6 +132,9 @@ impl VectorscopeSendData {
 pub struct VectorscopeCalcBuffer {
     pub index: usize,
     pub max: f32,
+    pub r_max: f32,
+    pub g_max: f32,
+    pub b_max: f32,
 }
 
 impl VectorscopeCalcBuffer {
@@ -127,12 +142,36 @@ impl VectorscopeCalcBuffer {
         Self {
             index: 0,
             max: f32::NEG_INFINITY,
+            r_max: f32::NEG_INFINITY,
+            g_max: f32::NEG_INFINITY,
+            b_max: f32::NEG_INFINITY,
         }
     }
 
-    pub fn update(&mut self, l: f32, r: f32) {
+    pub fn update(
+        &mut self,
+        l: f32,
+        r: f32,
+        r_l: f32,
+        r_r: f32,
+        g_l: f32,
+        g_r: f32,
+        b_l: f32,
+        b_r: f32,
+    ) {
         self.index += 1;
         self.max = self.max.max(l.abs()).max(r.abs());
+        self.r_max = self.r_max.max(r_l.abs()).max(r_r.abs());
+        self.g_max = self.g_max.max(g_l.abs()).max(g_r.abs());
+        self.b_max = self.b_max.max(b_l.abs()).max(b_r.abs());
+    }
+
+    pub fn reset(&mut self) {
+        self.index = 0;
+        self.max = f32::NEG_INFINITY;
+        self.r_max = f32::NEG_INFINITY;
+        self.g_max = f32::NEG_INFINITY;
+        self.b_max = f32::NEG_INFINITY;
     }
 }
 
@@ -215,7 +254,7 @@ pub struct AudioSourceBuffer {
     pub multiband: MultibandCalcBuffer,
     pub peak: PeakCalcBuffer,
     pub waveform: WaveformCalcBuffer,
-    pub stereo: VectorscopeCalcBuffer,
+    pub vector: VectorscopeCalcBuffer,
     pub spectrogram: SpectrogramCalcBuffer,
     pub spectrum: SpectrumCalcBuffer,
     pub setting: Setting,

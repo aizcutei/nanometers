@@ -403,39 +403,69 @@ impl NanometersApp {
                 ui.heading("Vectorscope");
                 ui.horizontal(|ui| {
                     ui.label("Mode");
-                    ui.selectable_value(
-                        &mut self.setting.vectorscope.mode,
-                        setting::VectorscopeMode::Logarithmic,
-                        "Logarithmic",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.vectorscope.mode,
-                        setting::VectorscopeMode::Linear,
-                        "Linear",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.vectorscope.mode,
-                        setting::VectorscopeMode::Lissajous,
-                        "Lissajous",
-                    );
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.vectorscope.mode,
+                            setting::VectorscopeMode::Logarithmic,
+                            "Logarithmic",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.vectorscope.mode,
+                            setting::VectorscopeMode::Linear,
+                            "Linear",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.vectorscope.mode,
+                            setting::VectorscopeMode::Lissajous,
+                            "Lissajous",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
                 });
                 ui.horizontal(|ui| {
                     ui.label("Color");
-                    ui.selectable_value(
-                        &mut self.setting.vectorscope.color,
-                        setting::VectorscopeColor::Static,
-                        "Static",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.vectorscope.color,
-                        setting::VectorscopeColor::RGB,
-                        "RGB",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.vectorscope.color,
-                        setting::VectorscopeColor::MultiBand,
-                        "MultiBand",
-                    );
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.vectorscope.color,
+                            setting::VectorscopeColor::Static,
+                            "Static",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.vectorscope.color,
+                            setting::VectorscopeColor::RGB,
+                            "RGB",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(
+                            &mut self.setting.vectorscope.color,
+                            setting::VectorscopeColor::MultiBand,
+                            "MultiBand",
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
                 });
                 ui.horizontal(|ui| {
                     ui.label("Polarity");

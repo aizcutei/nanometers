@@ -65,7 +65,7 @@ impl NanometersApp {
         }
 
         let mut update_waveform_data = WaveformSendData::new();
-        let mut update_stereogram_data = VectorscopeSendData::new();
+        let mut update_vector_data = VectorscopeSendData::new();
         let mut update_iir_data = Vec::new();
         let mut update_db_data = DBData::new();
         let mut update_osc_data = OscilloscopeSendData::new();
@@ -76,16 +76,22 @@ impl NanometersApp {
             update_iir_data.extend_from_slice(&data.iir);
             update_db_data.l = data.db.l;
             update_db_data.r = data.db.r;
-            update_stereogram_data.max = data.vectorscope.max;
-            update_stereogram_data
+            update_vector_data.max = data.vectorscope.max;
+            update_vector_data.r_max = data.vectorscope.r_max;
+            update_vector_data.g_max = data.vectorscope.g_max;
+            update_vector_data.b_max = data.vectorscope.b_max;
+            update_vector_data
                 .lissa
                 .extend_from_slice(&data.vectorscope.lissa);
-            update_stereogram_data
+            update_vector_data
                 .linear
                 .extend_from_slice(&data.vectorscope.linear);
-            update_stereogram_data
+            update_vector_data
                 .log
                 .extend_from_slice(&data.vectorscope.log);
+            update_vector_data.r.extend_from_slice(&data.vectorscope.r);
+            update_vector_data.g.extend_from_slice(&data.vectorscope.g);
+            update_vector_data.b.extend_from_slice(&data.vectorscope.b);
             update_waveform_data.concat(&data.waveform);
             update_osc_data = data.oscilloscope;
             update_spectrogram_image = data.spectrogram_image;
@@ -113,7 +119,7 @@ impl NanometersApp {
                     self.spectrum_meter(&update_spectrum_data, meter_rect, ui);
                 }
                 ModuleList::Vectorscope => {
-                    self.vectorscope_meter(&update_stereogram_data, meter_rect, ui);
+                    self.vectorscope_meter(&update_vector_data, meter_rect, ui);
                 }
             }
         }

@@ -360,7 +360,9 @@ impl NanometersApp {
             }
             VectorscopeMode::Lissajous => match self.setting.vectorscope.color {
                 VectorscopeColor::Static => {
-                    if !data.lissa.is_empty() {
+                    if data.lissa.is_empty() {
+                        ui.painter().extend(self.vectorscope.plot.clone());
+                    } else {
                         let transform = emath::TSTransform::new(
                             [rect.center().x, rect.center().y].into(),
                             if self.setting.vectorscope.normalize {
@@ -382,11 +384,78 @@ impl NanometersApp {
                             .collect();
                         self.vectorscope.plot = shapes.clone();
                         ui.painter().extend(shapes);
-                    } else {
-                        ui.painter().extend(self.vectorscope.plot.clone());
                     }
                 }
-                VectorscopeColor::RGB => {}
+                VectorscopeColor::RGB => {
+                    if data.r.is_empty() {
+                        ui.painter().extend(self.vectorscope.plot.clone());
+                    } else {
+                        let transform_r = emath::TSTransform::new(
+                            [rect.center().x, rect.center().y].into(),
+                            if self.setting.vectorscope.normalize {
+                                rect.center().y / data.r_max
+                            } else {
+                                rect.center().y
+                            },
+                        );
+                        let transform_g = emath::TSTransform::new(
+                            [rect.center().x, rect.center().y].into(),
+                            if self.setting.vectorscope.normalize {
+                                rect.center().y / data.g_max
+                            } else {
+                                rect.center().y
+                            },
+                        );
+                        let transform_b = emath::TSTransform::new(
+                            [rect.center().x, rect.center().y].into(),
+                            if self.setting.vectorscope.normalize {
+                                rect.center().y / data.b_max
+                            } else {
+                                rect.center().y
+                            },
+                        );
+                        let red_points: Vec<_> = data
+                            .r
+                            .iter()
+                            .map(|p| {
+                                Shape::circle_filled(
+                                    transform_r.mul_pos(p.to_owned()).to_owned(),
+                                    self.setting.vectorscope.point_size,
+                                    Color32::from_rgb_additive(255, 0, 0),
+                                )
+                            })
+                            .collect();
+                        let green_points: Vec<_> = data
+                            .g
+                            .iter()
+                            .map(|p| {
+                                Shape::circle_filled(
+                                    transform_g.mul_pos(p.to_owned()).to_owned(),
+                                    self.setting.vectorscope.point_size,
+                                    Color32::from_rgb_additive(0, 255, 0),
+                                )
+                            })
+                            .collect();
+                        let blue_points: Vec<_> = data
+                            .b
+                            .iter()
+                            .map(|p| {
+                                Shape::circle_filled(
+                                    transform_b.mul_pos(p.to_owned()).to_owned(),
+                                    self.setting.vectorscope.point_size,
+                                    Color32::from_rgb_additive(0, 0, 255),
+                                )
+                            })
+                            .collect();
+                        let shapes: Vec<_> = red_points
+                            .into_iter()
+                            .chain(green_points.into_iter())
+                            .chain(blue_points.into_iter())
+                            .collect();
+                        self.vectorscope.plot = shapes.clone();
+                        ui.painter().extend(shapes);
+                    }
+                }
                 VectorscopeColor::MultiBand => {}
             },
         }
