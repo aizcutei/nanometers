@@ -1,5 +1,5 @@
 use crate::audio::*;
-use crate::setting::{self, set_theme};
+use crate::setting::{self, set_theme, VectorscopeMode};
 use crate::utils::*;
 use crate::NanometersApp;
 use egui::style::{Selection, WidgetVisuals, Widgets};
@@ -203,22 +203,21 @@ impl NanometersApp {
                         self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     };
                 });
-                if ui
-                    .horizontal(|ui| {
-                        ui.label("Brightness Boost");
-                        ui.add(
+                ui.horizontal(|ui| {
+                    ui.label("Brightness Boost");
+                    if ui
+                        .add(
                             egui::Slider::new(
                                 &mut self.setting.spectrogram.brightness_boost,
                                 0.01..=1.0,
                             )
                             .text(""),
-                        );
-                    })
-                    .response
-                    .contains_pointer()
-                {
-                    self.tx_setting.as_ref().unwrap().send(self.setting.clone());
-                };
+                        )
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                });
             });
         });
     }
@@ -314,8 +313,8 @@ impl NanometersApp {
                 ui.heading("Modules Off/On");
                 let mut from = None;
                 let mut to = None;
-                ui.columns(self.setting.sequence.len(), |uis| {
-                    for (col_idx, column) in self.setting.sequence.clone().into_iter().enumerate() {
+                ui.columns(self.setting.meters.len(), |uis| {
+                    for (col_idx, column) in self.setting.meters.clone().into_iter().enumerate() {
                         let ui = &mut uis[col_idx];
                         let frame = Frame::default();
                         let (_, dropped_payload) = ui.dnd_drop_zone::<Location, ()>(frame, |ui| {
@@ -381,9 +380,9 @@ impl NanometersApp {
                         to.row -= (from.row < to.row) as usize;
                     }
 
-                    let item = self.setting.sequence[from.col].remove(from.row);
+                    let item = self.setting.meters[from.col].remove(from.row);
 
-                    let column = &mut self.setting.sequence[to.col];
+                    let column = &mut self.setting.meters[to.col];
                     to.row = to.row.min(column.len());
                     column.insert(to.row, item);
                     self.tx_setting
@@ -467,29 +466,33 @@ impl NanometersApp {
                         self.tx_setting.as_ref().unwrap().send(self.setting.clone());
                     };
                 });
-                ui.horizontal(|ui| {
-                    ui.label("Polarity");
-                    ui.selectable_value(
-                        &mut self.setting.vectorscope.polarity,
-                        setting::VectorscopePolarity::Uni,
-                        "Uniploar",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.vectorscope.polarity,
-                        setting::VectorscopePolarity::Bi,
-                        "Biploar",
-                    );
-                });
+                if self.setting.vectorscope.mode != VectorscopeMode::Lissajous {
+                    ui.horizontal(|ui| {
+                        ui.label("Polarity");
+                        ui.selectable_value(
+                            &mut self.setting.vectorscope.polarity,
+                            setting::VectorscopePolarity::Uni,
+                            "Uniploar",
+                        );
+                        ui.selectable_value(
+                            &mut self.setting.vectorscope.polarity,
+                            setting::VectorscopePolarity::Bi,
+                            "Biploar",
+                        );
+                    });
+                }
                 ui.horizontal(|ui| {
                     ui.label("Normalize");
                     ui.selectable_value(&mut self.setting.vectorscope.normalize, false, "Off");
                     ui.selectable_value(&mut self.setting.vectorscope.normalize, true, "On");
                 });
-                ui.horizontal(|ui| {
-                    ui.label("Guides");
-                    ui.selectable_value(&mut self.setting.vectorscope.guides, false, "Off");
-                    ui.selectable_value(&mut self.setting.vectorscope.guides, true, "On");
-                });
+                if self.setting.vectorscope.mode != VectorscopeMode::Lissajous {
+                    ui.horizontal(|ui| {
+                        ui.label("Guides");
+                        ui.selectable_value(&mut self.setting.vectorscope.guides, false, "Off");
+                        ui.selectable_value(&mut self.setting.vectorscope.guides, true, "On");
+                    });
+                }
             });
         });
     }
@@ -546,39 +549,70 @@ impl NanometersApp {
                         });
                         ui.horizontal(|ui| {
                             ui.label("Slope");
-                            ui.add(
-                                egui::Slider::new(&mut self.setting.spectrum.slope, -9.0..=9.0)
-                                    .text("dB"),
-                            );
+                            if ui
+                                .add(
+                                    egui::Slider::new(&mut self.setting.spectrum.slope, -9.0..=9.0)
+                                        .text("dB"),
+                                )
+                                .changed()
+                            {
+                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                            };
                         });
                     }
                     setting::SpectrumSwitch::Audio => {
                         ui.horizontal(|ui| {
                             ui.label("Channel");
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.channel,
-                                setting::SpectrumChannel::LR,
-                                "L/R",
-                            );
-                            ui.selectable_value(
-                                &mut self.setting.spectrum.channel,
-                                setting::SpectrumChannel::MS,
-                                "Mid/Side",
-                            );
+                            if ui
+                                .selectable_value(
+                                    &mut self.setting.spectrum.channel,
+                                    setting::SpectrumChannel::LR,
+                                    "L/R",
+                                )
+                                .changed()
+                            {
+                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                            };
+                            if ui
+                                .selectable_value(
+                                    &mut self.setting.spectrum.channel,
+                                    setting::SpectrumChannel::MS,
+                                    "Mid/Side",
+                                )
+                                .changed()
+                            {
+                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                            };
                         });
                         ui.horizontal(|ui| {
                             ui.label("Low");
-                            ui.add(
-                                egui::Slider::new(&mut self.setting.spectrum.low, -150.0..=-20.0)
+                            if ui
+                                .add(
+                                    egui::Slider::new(
+                                        &mut self.setting.spectrum.low,
+                                        -150.0..=-20.0,
+                                    )
                                     .text("dB"),
-                            );
+                                )
+                                .changed()
+                            {
+                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                            };
                         });
                         ui.horizontal(|ui| {
                             ui.label("High");
-                            ui.add(
-                                egui::Slider::new(&mut self.setting.spectrum.high, -50.0..=20.0)
+                            if ui
+                                .add(
+                                    egui::Slider::new(
+                                        &mut self.setting.spectrum.high,
+                                        -50.0..=20.0,
+                                    )
                                     .text("dB"),
-                            );
+                                )
+                                .changed()
+                            {
+                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                            };
                         });
                     }
                     setting::SpectrumSwitch::Ref => {

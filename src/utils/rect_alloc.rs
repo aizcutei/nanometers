@@ -1,7 +1,7 @@
-use crate::setting::ModuleList;
+use crate::setting::MeterList;
 use egui::*;
 
-pub fn rect_alloc(list: Vec<ModuleList>, present_rects: Vec<Rect>, rect: Rect) -> Vec<Rect> {
+pub fn rect_alloc(list: Vec<MeterList>, present_rects: Vec<Rect>, rect: Rect) -> Vec<Rect> {
     if list.len() == 0 {
         return vec![];
     } else {

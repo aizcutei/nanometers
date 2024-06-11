@@ -28,7 +28,7 @@ impl NanometersApp {
                                 .get(data.data.len().saturating_sub(2400) + i)
                                 .unwrap_or(&0.0))
                             * rect.center().y;
-                        Pos2::new(x, y)
+                        pos2(x, y)
                     })
                     .collect();
                 self.oscilloscope.plot = points.clone();

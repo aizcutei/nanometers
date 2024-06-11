@@ -4,10 +4,8 @@ use egui::*;
 
 impl NanometersApp {
     pub fn main_canvas(&mut self, ctx: &egui::Context) {
-        let full_frame = egui::Frame::default();
-
         egui::CentralPanel::default()
-            .frame(full_frame)
+            .frame(Frame::default())
             .show(ctx, |ui| {
                 let app_rect = ui.max_rect();
 
@@ -38,21 +36,21 @@ impl NanometersApp {
         if meters_rect != self.meter_size {
             self.meter_size = meters_rect;
             self.meters_rects = rect_alloc(
-                self.setting.sequence[1].clone(),
+                self.setting.meters[1].clone(),
                 self.meters_rects.clone(),
                 meters_rect,
             );
         }
         // If ModuleList changed
-        if self.setting.sequence[1].len() != self.meters_rects.len() {
+        if self.setting.meters[1].len() != self.meters_rects.len() {
             self.meters_rects = rect_alloc(
-                self.setting.sequence[1].clone(),
+                self.setting.meters[1].clone(),
                 self.meters_rects.clone(),
                 meters_rect,
             );
         }
 
-        if self.setting.sequence[1].is_empty() {
+        if self.setting.meters[1].is_empty() {
             ui.painter()
                 .rect_filled(meters_rect, 0.0, Color32::from_black_alpha(200));
             ui.painter().text(
@@ -76,22 +74,14 @@ impl NanometersApp {
             update_iir_data.extend_from_slice(&data.iir);
             update_db_data.l = data.db.l;
             update_db_data.r = data.db.r;
-            update_vector_data.max = data.vectorscope.max;
-            update_vector_data.r_max = data.vectorscope.r_max;
-            update_vector_data.g_max = data.vectorscope.g_max;
-            update_vector_data.b_max = data.vectorscope.b_max;
-            update_vector_data
-                .lissa
-                .extend_from_slice(&data.vectorscope.lissa);
-            update_vector_data
-                .linear
-                .extend_from_slice(&data.vectorscope.linear);
-            update_vector_data
-                .log
-                .extend_from_slice(&data.vectorscope.log);
+            update_vector_data.max = update_vector_data.max.max(data.vectorscope.max);
+            update_vector_data.r_max = update_vector_data.r_max.max(data.vectorscope.r_max);
+            update_vector_data.g_max = update_vector_data.g_max.max(data.vectorscope.g_max);
+            update_vector_data.b_max = update_vector_data.b_max.max(data.vectorscope.b_max);
             update_vector_data.r.extend_from_slice(&data.vectorscope.r);
             update_vector_data.g.extend_from_slice(&data.vectorscope.g);
             update_vector_data.b.extend_from_slice(&data.vectorscope.b);
+            update_vector_data.c.extend_from_slice(&data.vectorscope.c);
             update_waveform_data.concat(&data.waveform);
             update_osc_data = data.oscilloscope;
             update_spectrogram_image = data.spectrogram_image;
@@ -100,26 +90,29 @@ impl NanometersApp {
 
         ui.ctx().request_repaint();
 
-        for (i, meter) in self.setting.sequence[1].clone().iter().enumerate() {
+        for (i, meter) in self.setting.meters[1].clone().iter().enumerate() {
             let mut meter_rect = self.meters_rects[i];
             match meter {
-                ModuleList::Waveform => {
+                MeterList::Waveform => {
                     self.waveform_meter(&update_waveform_data, meter_rect, ui);
                 }
-                ModuleList::Spectrogram => {
+                MeterList::Spectrogram => {
                     self.spectrogram_meter(update_spectrogram_image.clone(), meter_rect, ui);
                 }
-                ModuleList::Peak => {
+                MeterList::Peak => {
                     self.peak_meter(&update_iir_data, &update_db_data, meter_rect, ui);
                 }
-                ModuleList::Oscilloscope => {
+                MeterList::Oscilloscope => {
                     self.oscilloscope_meter(&update_osc_data, meter_rect, ui);
                 }
-                ModuleList::Spectrum => {
+                MeterList::Spectrum => {
                     self.spectrum_meter(&update_spectrum_data, meter_rect, ui);
                 }
-                ModuleList::Vectorscope => {
+                MeterList::Vectorscope => {
                     self.vectorscope_meter(&update_vector_data, meter_rect, ui);
+                }
+                MeterList::GPUTest => {
+                    self.gpu_test_meter(meter_rect, ui);
                 }
             }
         }
@@ -201,33 +194,35 @@ impl NanometersApp {
 
         setting_area_ui.vertical_centered_justified(|ui| {
             ui.separator();
-            egui::ScrollArea::horizontal().show(ui, |ui| {
-                Grid::new("Setting_ui").show(ui, |ui| {
-                    self.modules_sequence_block(ui);
-                    self.spectrogram_setting_block(ui);
-                    self.vectorscope_settiing_block(ui);
-                    ui.end_row();
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::ScrollArea::horizontal().show(ui, |ui| {
+                    Grid::new("Setting_ui").show(ui, |ui| {
+                        self.modules_sequence_block(ui);
+                        self.spectrogram_setting_block(ui);
+                        self.vectorscope_settiing_block(ui);
+                        ui.end_row();
 
-                    self.waveform_setting_block(ui);
-                    self.spectrum_setting_block(ui);
-                    self.oscilloscope_setting_block(ui);
-                    ui.end_row();
+                        self.waveform_setting_block(ui);
+                        self.spectrum_setting_block(ui);
+                        self.oscilloscope_setting_block(ui);
+                        ui.end_row();
 
-                    self.device_setting_block(ui);
-                    self.theme_setting_block(ui);
-                    self.cpu_setting_block(ui);
-                    ui.end_row();
+                        self.device_setting_block(ui);
+                        self.theme_setting_block(ui);
+                        self.cpu_setting_block(ui);
+                        ui.end_row();
+                    });
                 });
+                ui.separator();
+                if ui.button("CLOSE SETTING").clicked() && self.setting_switch {
+                    self.setting_switch = false;
+                    let new_size = [setting_rect.max.x, setting_rect.max.y - 400.0];
+                    ui.ctx()
+                        .send_viewport_cmd(ViewportCommand::InnerSize(new_size.into()));
+                    ui.ctx()
+                        .send_viewport_cmd(ViewportCommand::MinInnerSize([200.0, 100.0].into()));
+                }
             });
-            ui.separator();
-            if ui.button("CLOSE SETTING").clicked() && self.setting_switch {
-                self.setting_switch = false;
-                let new_size = [setting_rect.max.x, setting_rect.max.y - 400.0];
-                ui.ctx()
-                    .send_viewport_cmd(ViewportCommand::InnerSize(new_size.into()));
-                ui.ctx()
-                    .send_viewport_cmd(ViewportCommand::MinInnerSize([200.0, 100.0].into()));
-            }
         });
     }
 }

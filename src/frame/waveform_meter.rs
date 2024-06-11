@@ -209,7 +209,7 @@ impl NanometersApp {
         let mut g_points = Vec::new();
         let mut b_points = Vec::new();
         for i in 0..rect.width() as usize {
-            r_points.push(Pos2::new(
+            r_points.push(pos2(
                 rect.max.x - i as f32,
                 *self
                     .waveform
@@ -218,7 +218,7 @@ impl NanometersApp {
                     .get(len.wrapping_sub(i))
                     .unwrap_or(&0.0),
             ));
-            g_points.push(Pos2::new(
+            g_points.push(pos2(
                 rect.max.x - i as f32,
                 *self
                     .waveform
@@ -227,7 +227,7 @@ impl NanometersApp {
                     .get(len.wrapping_sub(i))
                     .unwrap_or(&0.0),
             ));
-            b_points.push(Pos2::new(
+            b_points.push(pos2(
                 rect.max.x - i as f32,
                 *self
                     .waveform

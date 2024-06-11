@@ -3,36 +3,36 @@ use egui::*;
 pub fn resize_ui(ui: &mut egui::Ui, rect: egui::Rect) {
     let thickness = 2.0;
     let left_top_corner_rect = egui::Rect::from_min_max(
-        egui::Pos2::new(rect.min.x, rect.min.y),
-        egui::Pos2::new(rect.min.x + thickness, rect.min.y + thickness),
+        egui::pos2(rect.min.x, rect.min.y),
+        egui::pos2(rect.min.x + thickness, rect.min.y + thickness),
     );
     let top_edge_rect = egui::Rect::from_min_max(
-        egui::Pos2::new(rect.min.x + thickness, rect.min.y),
-        egui::Pos2::new(rect.max.x - thickness, rect.min.y + thickness),
+        egui::pos2(rect.min.x + thickness, rect.min.y),
+        egui::pos2(rect.max.x - thickness, rect.min.y + thickness),
     );
     let right_top_corner_rect = egui::Rect::from_min_max(
-        egui::Pos2::new(rect.max.x - thickness, rect.min.y),
-        egui::Pos2::new(rect.max.x, rect.min.y + thickness),
+        egui::pos2(rect.max.x - thickness, rect.min.y),
+        egui::pos2(rect.max.x, rect.min.y + thickness),
     );
     let right_edge_rect = egui::Rect::from_min_max(
-        egui::Pos2::new(rect.max.x - thickness, rect.min.y + thickness),
-        egui::Pos2::new(rect.max.x, rect.max.y - thickness),
+        egui::pos2(rect.max.x - thickness, rect.min.y + thickness),
+        egui::pos2(rect.max.x, rect.max.y - thickness),
     );
     let right_bottom_corner_rect = egui::Rect::from_min_max(
-        egui::Pos2::new(rect.max.x - thickness, rect.max.y - thickness),
-        egui::Pos2::new(rect.max.x, rect.max.y),
+        egui::pos2(rect.max.x - thickness, rect.max.y - thickness),
+        egui::pos2(rect.max.x, rect.max.y),
     );
     let bottom_edge_rect = egui::Rect::from_min_max(
-        egui::Pos2::new(rect.min.x + thickness, rect.max.y - thickness),
-        egui::Pos2::new(rect.max.x - thickness, rect.max.y),
+        egui::pos2(rect.min.x + thickness, rect.max.y - thickness),
+        egui::pos2(rect.max.x - thickness, rect.max.y),
     );
     let left_bottom_corner_rect = egui::Rect::from_min_max(
-        egui::Pos2::new(rect.min.x, rect.max.y - thickness),
-        egui::Pos2::new(rect.min.x + thickness, rect.max.y),
+        egui::pos2(rect.min.x, rect.max.y - thickness),
+        egui::pos2(rect.min.x + thickness, rect.max.y),
     );
     let left_edge_rect = egui::Rect::from_min_max(
-        egui::Pos2::new(rect.min.x, rect.min.y + thickness),
-        egui::Pos2::new(rect.min.x + thickness, rect.max.y - thickness),
+        egui::pos2(rect.min.x, rect.min.y + thickness),
+        egui::pos2(rect.min.x + thickness, rect.max.y - thickness),
     );
     left_top_corner(ui, left_top_corner_rect);
     top_edge(ui, top_edge_rect);

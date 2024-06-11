@@ -81,18 +81,33 @@ impl MAXMIN {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct MultibandChannelBuffer {
+    pub l: IIRBuffer,
+    pub r: IIRBuffer,
+}
+
+impl MultibandChannelBuffer {
+    pub fn new() -> Self {
+        Self {
+            l: IIRBuffer::new(),
+            r: IIRBuffer::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct MultibandCalcBuffer {
-    pub low_buf: IIRBuffer,
-    pub mid_buf: IIRBuffer,
-    pub high_buf: IIRBuffer,
+    pub low_buf: MultibandChannelBuffer,
+    pub mid_buf: MultibandChannelBuffer,
+    pub high_buf: MultibandChannelBuffer,
 }
 
 impl MultibandCalcBuffer {
     pub fn new() -> Self {
         Self {
-            low_buf: IIRBuffer::new(),
-            mid_buf: IIRBuffer::new(),
-            high_buf: IIRBuffer::new(),
+            low_buf: MultibandChannelBuffer::new(),
+            mid_buf: MultibandChannelBuffer::new(),
+            high_buf: MultibandChannelBuffer::new(),
         }
     }
 }
@@ -103,12 +118,10 @@ pub struct VectorscopeSendData {
     pub r_max: f32,
     pub g_max: f32,
     pub b_max: f32,
-    pub lissa: Vec<Pos2>,
-    pub log: Vec<Pos2>,
-    pub linear: Vec<Pos2>,
-    pub r: Vec<Pos2>,
+    pub r: Vec<Pos2>, // Non multiband mode as default channel
     pub g: Vec<Pos2>,
     pub b: Vec<Pos2>,
+    pub c: Vec<Color32>,
 }
 
 impl VectorscopeSendData {
@@ -118,12 +131,10 @@ impl VectorscopeSendData {
             r_max: f32::NEG_INFINITY,
             g_max: f32::NEG_INFINITY,
             b_max: f32::NEG_INFINITY,
-            lissa: Vec::new(),
-            log: Vec::new(),
-            linear: Vec::new(),
             r: Vec::new(),
             g: Vec::new(),
             b: Vec::new(),
+            c: Vec::new(),
         }
     }
 }

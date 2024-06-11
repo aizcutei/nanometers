@@ -1,4 +1,5 @@
 use crate::setting::SpectrumFreqLine;
+use crate::setting::SpectrumMode;
 // use crate::setting::*;
 use crate::utils::*;
 use crate::NanometersApp;
@@ -75,57 +76,71 @@ impl NanometersApp {
             [pos2(ref_line_x, 0.0), pos2(ref_line_x, rect.bottom())],
             Stroke::new(1.0, self.setting.theme.main),
         );
-        let mut wave_0_points = Vec::new();
-        let mut wave_1_points = Vec::new();
-        if !data.l.is_empty() {
-            // println!("{:?}", data.l[0]);
-            for i in 0..2049 {
-                if data.l[i] > self.spectrum.ch0[i] {
-                    self.spectrum.ch0[i] = data.l[i];
-                    wave_0_points.push(pos2(
-                        self.spectrum.pos[i],
-                        (1.0 - data.l[i]) * rect.height(),
-                    ));
-                } else {
-                    self.spectrum.ch0[i] = self.spectrum.ch0[i] * self.setting.spectrum.smoothing
-                        + data.l[i] * (1.0 - self.setting.spectrum.smoothing);
-                    wave_0_points.push(pos2(
-                        self.spectrum.pos[i],
-                        (1.0 - self.spectrum.ch0[i]) * rect.height(),
-                    ));
-                }
-                if data.r[i] > self.spectrum.ch1[i] {
-                    self.spectrum.ch1[i] = data.r[i];
-                    wave_1_points.push(pos2(
-                        self.spectrum.pos[i],
-                        (1.0 - data.r[i]) * rect.height(),
-                    ));
-                } else {
-                    self.spectrum.ch1[i] = self.spectrum.ch1[i] * self.setting.spectrum.smoothing
-                        + data.r[i] * (1.0 - self.setting.spectrum.smoothing);
-                    wave_1_points.push(pos2(
-                        self.spectrum.pos[i],
-                        (1.0 - self.spectrum.ch1[i]) * rect.height(),
-                    ));
-                }
-            }
-        } else {
-            for i in 0..2049 {
-                wave_0_points.push(pos2(
-                    self.spectrum.pos[i],
-                    (1.0 - self.spectrum.ch0[i]) * rect.height(),
-                ));
-                wave_1_points.push(pos2(
-                    self.spectrum.pos[i],
-                    (1.0 - self.spectrum.ch1[i]) * rect.height(),
-                ));
-            }
-        }
 
-        let wave_0 = Shape::line(wave_0_points, Stroke::new(2.0, self.setting.theme.main));
-        let wave_1 = Shape::line(wave_1_points, Stroke::new(2.0, self.setting.theme.text));
-        ui.painter().add(wave_0);
-        ui.painter().add(wave_1);
+        match self.setting.spectrum.mode {
+            SpectrumMode::FFT => {
+                let mut wave_0_points = Vec::new();
+                let mut wave_1_points = Vec::new();
+                if data.l.is_empty() {
+                    wave_0_points.extend(
+                        self.spectrum
+                            .pos
+                            .iter()
+                            .zip(self.spectrum.ch0.iter())
+                            .take(2050)
+                            .map(|(&pos, &ch0)| pos2(pos, (1.0 - ch0) * rect.height())),
+                    );
+                    wave_1_points.extend(
+                        self.spectrum
+                            .pos
+                            .iter()
+                            .zip(self.spectrum.ch1.iter())
+                            .take(2049)
+                            .map(|(&pos, &ch1)| pos2(pos, (1.0 - ch1) * rect.height())),
+                    );
+                } else {
+                    for i in 0..2049 {
+                        if data.l[i] > self.spectrum.ch0[i] || self.spectrum.ch0[i].is_nan() {
+                            self.spectrum.ch0[i] = data.l[i];
+                            wave_0_points.push(pos2(
+                                self.spectrum.pos[i],
+                                (1.0 - data.l[i]) * rect.height(),
+                            ));
+                        } else {
+                            self.spectrum.ch0[i] = self.spectrum.ch0[i]
+                                * self.setting.spectrum.smoothing
+                                + data.l[i] * (1.0 - self.setting.spectrum.smoothing);
+                            wave_0_points.push(pos2(
+                                self.spectrum.pos[i],
+                                (1.0 - self.spectrum.ch0[i]) * rect.height(),
+                            ));
+                        }
+                        if data.r[i] > self.spectrum.ch1[i] || self.spectrum.ch1[i].is_nan() {
+                            self.spectrum.ch1[i] = data.r[i];
+                            wave_1_points.push(pos2(
+                                self.spectrum.pos[i],
+                                (1.0 - data.r[i]) * rect.height(),
+                            ));
+                        } else {
+                            self.spectrum.ch1[i] = self.spectrum.ch1[i]
+                                * self.setting.spectrum.smoothing
+                                + data.r[i] * (1.0 - self.setting.spectrum.smoothing);
+                            wave_1_points.push(pos2(
+                                self.spectrum.pos[i],
+                                (1.0 - self.spectrum.ch1[i]) * rect.height(),
+                            ));
+                        }
+                    }
+                }
+
+                let wave_0 = Shape::line(wave_0_points, Stroke::new(2.0, self.setting.theme.main));
+                let wave_1 = Shape::line(wave_1_points, Stroke::new(2.0, self.setting.theme.text));
+                ui.painter().add(wave_0);
+                ui.painter().add(wave_1);
+            }
+            SpectrumMode::ColorBar => {}
+            SpectrumMode::Both => {}
+        }
     }
 }
 

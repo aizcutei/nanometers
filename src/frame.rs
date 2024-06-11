@@ -1,4 +1,5 @@
 #![allow(unused)]
+pub(crate) mod gpu_test;
 pub(crate) mod main_canvas;
 pub(crate) mod oscilloscope_meter;
 pub(crate) mod peak_meter;
@@ -9,6 +10,7 @@ pub(crate) mod spectrum_meter;
 pub(crate) mod vectorscope_meter;
 pub(crate) mod waveform_meter;
 
+pub use gpu_test::*;
 pub use main_canvas::*;
 pub use oscilloscope_meter::*;
 pub use peak_meter::*;

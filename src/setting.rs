@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub(crate) mod audio_device;
 pub(crate) mod audio_source;
-pub(crate) mod module;
+pub(crate) mod meter;
 pub(crate) mod oscilloscope;
 pub(crate) mod peak;
 pub(crate) mod spectrogram;
@@ -13,7 +13,7 @@ pub(crate) mod waveform;
 
 pub use audio_device::*;
 pub use audio_source::*;
-pub use module::*;
+pub use meter::*;
 pub use oscilloscope::*;
 pub use peak::*;
 pub use spectrogram::*;
@@ -30,8 +30,7 @@ pub struct Setting {
     pub vectorscope: VectorscopeSetting,
     pub oscilloscope: OscilloscopeSetting,
     pub spectrum: SpectrumSetting,
-    pub sequence: Vec<Vec<ModuleList>>,
-
+    pub meters: Vec<Vec<MeterList>>,
     pub theme: Theme,
 }
 
@@ -44,15 +43,15 @@ impl Default for Setting {
             vectorscope: VectorscopeSetting::default(),
             oscilloscope: OscilloscopeSetting::default(),
             spectrum: SpectrumSetting::default(),
-
-            sequence: vec![
+            meters: vec![
                 vec![
-                    ModuleList::Waveform,
-                    ModuleList::Spectrogram,
-                    ModuleList::Vectorscope,
-                    ModuleList::Oscilloscope,
-                    ModuleList::Spectrum,
-                    ModuleList::Peak,
+                    MeterList::Waveform,
+                    MeterList::Spectrogram,
+                    MeterList::Vectorscope,
+                    MeterList::Oscilloscope,
+                    MeterList::Spectrum,
+                    MeterList::Peak,
+                    // MeterList::GPUTest,
                 ],
                 vec![],
             ],

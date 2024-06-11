@@ -1,0 +1,42 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'nanometers'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=nanometers",
+                    "--package=nanometers"
+                ],
+                "filter": {
+                    "name": "nanometers",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'nanometers'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=nanometers",
+                    "--package=nanometers"
+                ],
+                "filter": {
+                    "name": "nanometers",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

@@ -64,37 +64,143 @@ impl NanometersApp {
                             ui.painter().extend(shapes);
                         }
                         // Point plot
-                        if data.linear.is_empty() {
-                            ui.painter().extend(self.vectorscope.plot.clone());
-                        } else {
-                            let transform = emath::TSTransform::new(
-                                [rect.center().x, rect.max.y].into(),
-                                if self.setting.vectorscope.normalize {
-                                    if data.max > 0.001 {
-                                        rect.max.y / (1.0 + data.max.log10() / 3.0)
-                                    } else {
-                                        rect.max.y
-                                    }
+                        match self.setting.vectorscope.color {
+                            VectorscopeColor::Static => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
                                 } else {
-                                    rect.max.y
-                                },
-                            );
-                            let shapes: Vec<_> = data
-                                .log
-                                .iter()
-                                .map(|p| {
-                                    Shape::circle_filled(
-                                        transform.mul_pos(Pos2::new(
-                                            if p.y > 0.0 { -p.x } else { p.x },
-                                            if p.y > 0.0 { -p.y } else { p.y },
-                                        )),
-                                        self.setting.vectorscope.point_size,
-                                        self.setting.theme.main,
-                                    )
-                                })
-                                .collect();
-                            self.vectorscope.plot = shapes.clone();
-                            ui.painter().extend(shapes);
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.max.y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            if data.max > 0.001 {
+                                                rect.max.y / (1.0 + data.max.log10() / 3.0)
+                                            } else {
+                                                rect.max.y
+                                            }
+                                        } else {
+                                            rect.max.y
+                                        },
+                                    );
+                                    let shapes: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                self.setting.theme.main,
+                                            )
+                                        })
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
+                            VectorscopeColor::MultiBand => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
+                                } else {
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.max.y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            if data.max > 0.001 {
+                                                rect.max.y / (1.0 + data.max.log10() / 3.0)
+                                            } else {
+                                                rect.max.y
+                                            }
+                                        } else {
+                                            rect.max.y
+                                        },
+                                    );
+                                    let red_points: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                Color32::from_rgb_additive(255, 0, 0),
+                                            )
+                                        })
+                                        .collect();
+                                    let green_points: Vec<_> = data
+                                        .g
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                Color32::from_rgb_additive(0, 255, 0),
+                                            )
+                                        })
+                                        .collect();
+                                    let blue_points: Vec<_> = data
+                                        .b
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                Color32::from_rgb_additive(0, 0, 255),
+                                            )
+                                        })
+                                        .collect();
+                                    let shapes: Vec<_> = red_points
+                                        .into_iter()
+                                        .chain(green_points)
+                                        .chain(blue_points)
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
+                            VectorscopeColor::RGB => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
+                                } else {
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.max.y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            if data.max > 0.001 {
+                                                rect.max.y / (1.0 + data.max.log10() / 3.0)
+                                            } else {
+                                                rect.max.y
+                                            }
+                                        } else {
+                                            rect.max.y
+                                        },
+                                    );
+                                    let shapes: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .zip(&data.c)
+                                        .map(|(p, c)| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                *c,
+                                            )
+                                        })
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
                         }
                     }
                     VectorscopePolarity::Bi => {
@@ -154,34 +260,128 @@ impl NanometersApp {
                             ui.painter().extend(shapes);
                         }
                         // Point
-                        if data.linear.is_empty() {
-                            ui.painter().extend(self.vectorscope.plot.clone());
-                        } else {
-                            let transform = emath::TSTransform::new(
-                                [rect.center().x, rect.center().y].into(),
-                                if self.setting.vectorscope.normalize {
-                                    if data.max > 0.001 {
-                                        rect.center().y / (1.0 + data.max.log10() / 3.0)
-                                    } else {
-                                        rect.center().y
-                                    }
+                        match self.setting.vectorscope.color {
+                            VectorscopeColor::Static => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
                                 } else {
-                                    rect.center().y
-                                },
-                            );
-                            let shapes: Vec<_> = data
-                                .log
-                                .iter()
-                                .map(|p| {
-                                    Shape::circle_filled(
-                                        transform.mul_pos(p.to_owned()),
-                                        self.setting.vectorscope.point_size * 0.5,
-                                        self.setting.theme.main,
-                                    )
-                                })
-                                .collect();
-                            self.vectorscope.plot = shapes.clone();
-                            ui.painter().extend(shapes);
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.center().y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            if data.max > 0.001 {
+                                                rect.center().y / (1.0 + data.max.log10() / 3.0)
+                                            } else {
+                                                rect.center().y
+                                            }
+                                        } else {
+                                            rect.center().y
+                                        },
+                                    );
+                                    let shapes: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(p.to_owned()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                self.setting.theme.main,
+                                            )
+                                        })
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
+                            VectorscopeColor::MultiBand => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
+                                } else {
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.center().y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            if data.max > 0.001 {
+                                                rect.center().y / (1.0 + data.max.log10() / 3.0)
+                                            } else {
+                                                rect.center().y
+                                            }
+                                        } else {
+                                            rect.center().y
+                                        },
+                                    );
+                                    let red_points: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(p.to_owned()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                Color32::from_rgb_additive(255, 0, 0),
+                                            )
+                                        })
+                                        .collect();
+                                    let green_points: Vec<_> = data
+                                        .g
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(p.to_owned()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                Color32::from_rgb_additive(0, 255, 0),
+                                            )
+                                        })
+                                        .collect();
+                                    let blue_points: Vec<_> = data
+                                        .b
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(p.to_owned()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                Color32::from_rgb_additive(0, 0, 255),
+                                            )
+                                        })
+                                        .collect();
+                                    let shapes: Vec<_> = red_points
+                                        .into_iter()
+                                        .chain(green_points.into_iter())
+                                        .chain(blue_points.into_iter())
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
+                            VectorscopeColor::RGB => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
+                                } else {
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.center().y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            if data.max > 0.001 {
+                                                rect.center().y / (1.0 + data.max.log10() / 3.0)
+                                            } else {
+                                                rect.center().y
+                                            }
+                                        } else {
+                                            rect.center().y
+                                        },
+                                    );
+                                    let shapes: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .zip(&data.c)
+                                        .map(|(p, c)| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(p.to_owned()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                *c,
+                                            )
+                                        })
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
                         }
                     }
                 }
@@ -228,33 +428,131 @@ impl NanometersApp {
                             ui.painter().extend(shapes);
                         }
                         // Points
-                        if data.linear.is_empty() {
-                            ui.painter().extend(self.vectorscope.plot.clone());
-                        } else {
-                            let transform = emath::TSTransform::new(
-                                [rect.center().x, rect.max.y].into(),
-                                if self.setting.vectorscope.normalize {
-                                    0.717067812 * rect.max.y / data.max
+                        match self.setting.vectorscope.color {
+                            VectorscopeColor::Static => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
                                 } else {
-                                    0.717067812 * rect.center().y
-                                },
-                            );
-                            let shapes: Vec<_> = data
-                                .linear
-                                .iter()
-                                .map(|p| {
-                                    Shape::circle_filled(
-                                        transform.mul_pos(Pos2::new(
-                                            if p.y > 0.0 { -p.x } else { p.x },
-                                            if p.y > 0.0 { -p.y } else { p.y },
-                                        )),
-                                        self.setting.vectorscope.point_size,
-                                        self.setting.theme.main,
-                                    )
-                                })
-                                .collect();
-                            self.vectorscope.plot = shapes.clone();
-                            ui.painter().extend(shapes);
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.max.y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            0.717067812 * rect.max.y / data.max
+                                        } else {
+                                            0.717067812 * rect.center().y
+                                        },
+                                    );
+                                    let shapes: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                self.setting.theme.main,
+                                            )
+                                        })
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
+                            VectorscopeColor::MultiBand => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
+                                } else {
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.max.y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            0.717067812 * rect.max.y / data.max
+                                        } else {
+                                            0.717067812 * rect.center().y
+                                        },
+                                    );
+                                    let red_points: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                Color32::from_rgb_additive(255, 0, 0),
+                                            )
+                                        })
+                                        .collect();
+                                    let green_points: Vec<_> = data
+                                        .g
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                Color32::from_rgb_additive(0, 255, 0),
+                                            )
+                                        })
+                                        .collect();
+                                    let blue_points: Vec<_> = data
+                                        .b
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                Color32::from_rgb_additive(0, 0, 255),
+                                            )
+                                        })
+                                        .collect();
+                                    let shapes: Vec<_> = red_points
+                                        .into_iter()
+                                        .chain(green_points)
+                                        .chain(blue_points)
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
+                            VectorscopeColor::RGB => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
+                                } else {
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.max.y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            0.717067812 * rect.max.y / data.max
+                                        } else {
+                                            0.717067812 * rect.center().y
+                                        },
+                                    );
+                                    let shapes: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .zip(&data.c)
+                                        .map(|(p, c)| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(pos2(
+                                                    if p.y > 0.0 { -p.x } else { p.x },
+                                                    if p.y > 0.0 { -p.y } else { p.y },
+                                                )),
+                                                self.setting.vectorscope.point_size,
+                                                *c,
+                                            )
+                                        })
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
                         }
                     }
                     VectorscopePolarity::Bi => {
@@ -330,37 +628,139 @@ impl NanometersApp {
                             ui.painter().extend(shapes);
                         }
                         // Points
-                        if data.linear.is_empty() {
-                            ui.painter().extend(self.vectorscope.plot.clone());
-                        } else {
-                            let transform = emath::TSTransform::new(
-                                [rect.center().x, rect.center().y].into(),
-                                if self.setting.vectorscope.normalize {
-                                    0.3535533906 * rect.max.y / data.max
+                        match self.setting.vectorscope.color {
+                            VectorscopeColor::Static => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
                                 } else {
-                                    0.3535533906 * rect.center().y
-                                },
-                            );
-                            let shapes: Vec<_> = data
-                                .linear
-                                .iter()
-                                .map(|p| {
-                                    Shape::circle_filled(
-                                        transform.mul_pos(p.clone()),
-                                        self.setting.vectorscope.point_size * 0.5,
-                                        self.setting.theme.main,
-                                    )
-                                })
-                                .collect();
-                            self.vectorscope.plot = shapes.clone();
-                            ui.painter().extend(shapes);
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.center().y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            0.3535533906 * rect.max.y / data.max
+                                        } else {
+                                            0.3535533906 * rect.center().y
+                                        },
+                                    );
+                                    let shapes: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(p.clone()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                self.setting.theme.main,
+                                            )
+                                        })
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
+                            VectorscopeColor::MultiBand => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
+                                } else {
+                                    let transform_r = emath::TSTransform::new(
+                                        [rect.center().x, rect.center().y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            0.3535533906 * rect.max.y / data.r_max
+                                        } else {
+                                            0.3535533906 * rect.center().y
+                                        },
+                                    );
+                                    let transform_g = emath::TSTransform::new(
+                                        [rect.center().x, rect.center().y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            0.3535533906 * rect.max.y / data.g_max
+                                        } else {
+                                            0.3535533906 * rect.center().y
+                                        },
+                                    );
+                                    let transform_b = emath::TSTransform::new(
+                                        [rect.center().x, rect.center().y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            0.3535533906 * rect.max.y / data.b_max
+                                        } else {
+                                            0.3535533906 * rect.center().y
+                                        },
+                                    );
+                                    let red_points: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform_r.mul_pos(p.clone()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                Color32::from_rgb_additive(255, 0, 0),
+                                            )
+                                        })
+                                        .collect();
+                                    let green_points: Vec<_> = data
+                                        .g
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform_g.mul_pos(p.clone()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                Color32::from_rgb_additive(0, 255, 0),
+                                            )
+                                        })
+                                        .collect();
+                                    let blue_points: Vec<_> = data
+                                        .b
+                                        .iter()
+                                        .map(|p| {
+                                            Shape::circle_filled(
+                                                transform_b.mul_pos(p.clone()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                Color32::from_rgb_additive(0, 0, 255),
+                                            )
+                                        })
+                                        .collect();
+                                    let shapes: Vec<_> = blue_points
+                                        .into_iter()
+                                        .chain(green_points.into_iter())
+                                        .chain(red_points.into_iter())
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
+                            VectorscopeColor::RGB => {
+                                if data.r.is_empty() {
+                                    ui.painter().extend(self.vectorscope.plot.clone());
+                                } else {
+                                    let transform = emath::TSTransform::new(
+                                        [rect.center().x, rect.center().y].into(),
+                                        if self.setting.vectorscope.normalize {
+                                            0.3535533906 * rect.max.y / data.max
+                                        } else {
+                                            0.3535533906 * rect.center().y
+                                        },
+                                    );
+                                    let shapes: Vec<_> = data
+                                        .r
+                                        .iter()
+                                        .zip(&data.c)
+                                        .map(|(p, c)| {
+                                            Shape::circle_filled(
+                                                transform.mul_pos(p.clone()),
+                                                self.setting.vectorscope.point_size * 0.5,
+                                                *c,
+                                            )
+                                        })
+                                        .collect();
+                                    self.vectorscope.plot = shapes.clone();
+                                    ui.painter().extend(shapes);
+                                }
+                            }
                         }
                     }
                 }
             }
             VectorscopeMode::Lissajous => match self.setting.vectorscope.color {
                 VectorscopeColor::Static => {
-                    if data.lissa.is_empty() {
+                    if data.r.is_empty() {
                         ui.painter().extend(self.vectorscope.plot.clone());
                     } else {
                         let transform = emath::TSTransform::new(
@@ -372,7 +772,7 @@ impl NanometersApp {
                             },
                         );
                         let shapes: Vec<_> = data
-                            .lissa
+                            .r
                             .iter()
                             .map(|p| {
                                 Shape::circle_filled(
@@ -387,6 +787,34 @@ impl NanometersApp {
                     }
                 }
                 VectorscopeColor::RGB => {
+                    if data.r.is_empty() {
+                        ui.painter().extend(self.vectorscope.plot.clone());
+                    } else {
+                        let transform = emath::TSTransform::new(
+                            [rect.center().x, rect.center().y].into(),
+                            if self.setting.vectorscope.normalize {
+                                rect.center().y / data.max
+                            } else {
+                                rect.center().y
+                            },
+                        );
+                        let shapes: Vec<_> = data
+                            .r
+                            .iter()
+                            .zip(&data.c)
+                            .map(|(p, c)| {
+                                Shape::circle_filled(
+                                    transform.mul_pos(p.to_owned()).to_owned(),
+                                    self.setting.vectorscope.point_size,
+                                    *c,
+                                )
+                            })
+                            .collect();
+                        self.vectorscope.plot = shapes.clone();
+                        ui.painter().extend(shapes);
+                    }
+                }
+                VectorscopeColor::MultiBand => {
                     if data.r.is_empty() {
                         ui.painter().extend(self.vectorscope.plot.clone());
                     } else {
@@ -420,7 +848,7 @@ impl NanometersApp {
                             .map(|p| {
                                 Shape::circle_filled(
                                     transform_r.mul_pos(p.to_owned()).to_owned(),
-                                    self.setting.vectorscope.point_size,
+                                    self.setting.vectorscope.point_size * 0.5,
                                     Color32::from_rgb_additive(255, 0, 0),
                                 )
                             })
@@ -431,7 +859,7 @@ impl NanometersApp {
                             .map(|p| {
                                 Shape::circle_filled(
                                     transform_g.mul_pos(p.to_owned()).to_owned(),
-                                    self.setting.vectorscope.point_size,
+                                    self.setting.vectorscope.point_size * 0.5,
                                     Color32::from_rgb_additive(0, 255, 0),
                                 )
                             })
@@ -442,21 +870,20 @@ impl NanometersApp {
                             .map(|p| {
                                 Shape::circle_filled(
                                     transform_b.mul_pos(p.to_owned()).to_owned(),
-                                    self.setting.vectorscope.point_size,
+                                    self.setting.vectorscope.point_size * 0.5,
                                     Color32::from_rgb_additive(0, 0, 255),
                                 )
                             })
                             .collect();
-                        let shapes: Vec<_> = red_points
+                        let shapes: Vec<_> = blue_points
                             .into_iter()
                             .chain(green_points.into_iter())
-                            .chain(blue_points.into_iter())
+                            .chain(red_points.into_iter())
                             .collect();
                         self.vectorscope.plot = shapes.clone();
                         ui.painter().extend(shapes);
                     }
                 }
-                VectorscopeColor::MultiBand => {}
             },
         }
     }
