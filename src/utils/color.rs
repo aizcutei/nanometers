@@ -1,37 +1,26 @@
 use crate::utils::*;
+use egui::*;
 
-pub fn multiband_color(data: Vec<f32>) -> [f32; 3] {
-    let low = data
-        .iter()
-        .take(128)
-        .zip(MB_LOW.iter())
-        .map(|(a, b)| a * b)
-        .sum::<f32>()
-        / 256.0;
-    let mid = data
-        .iter()
-        .take(436)
-        .zip(MB_MID.iter())
-        .map(|(a, b)| a * b)
-        .sum::<f32>()
-        / (436.0 * 2.0);
-    let high = data
-        .iter()
-        .take(512)
-        .zip(MB_HIGH.iter())
-        .map(|(a, b)| a * b)
-        .sum::<f32>()
-        / 1024.0;
-    [if low > 1.0 { 1.0 } else { low }, mid, high]
+pub fn normalize_additive_color(low: f32, mid: f32, high: f32) -> Color32 {
+    let max = low.max(mid).max(high);
+    let low = low / max;
+    let mid = mid / max;
+    let high = high / max;
+    let r = (low * 255.0) as u8;
+    let g = (mid * 255.0) as u8;
+    let b = (high * 255.0) as u8;
+    Color32::from_rgb_additive(r, g, b)
 }
 
-pub fn full_brightness_color(rgb: &[f32; 3]) -> egui::Color32 {
-    let max = rgb.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
-    egui::Color32::from_rgb(
-        (rgb[0] * (1.0 / max) * 255.0) as u8,
-        (rgb[1] * (1.0 / max) * 255.0) as u8,
-        (rgb[2] * (1.0 / max) * 255.0) as u8,
-    )
+pub fn normalize_color(low: f32, mid: f32, high: f32) -> Color32 {
+    let max = low.max(mid).max(high);
+    let low = low / max;
+    let mid = mid / max;
+    let high = high / max;
+    let r = (low * 255.0) as u8;
+    let g = (mid * 255.0) as u8;
+    let b = (high * 255.0) as u8;
+    Color32::from_rgb(r, g, b)
 }
 
 pub fn color_lut_129() -> Vec<egui::Color32> {

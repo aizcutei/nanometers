@@ -240,7 +240,6 @@ impl Default for SpectrogramCalcBuffer {
 #[derive(Debug, Clone, Default)]
 pub struct SpectrumCalcBuffer {
     pub ab: bool,
-
     pub a: RawData,
     pub b: RawData,
 }

@@ -78,10 +78,7 @@ impl NanometersApp {
                     .plot_point
                     .ud
                     .push_back(rect.center().y - rect.height() * v.value.min / 2.0);
-                self.waveform
-                    .plot_point
-                    .ucolor
-                    .push_back(full_brightness_color(&v.color));
+                self.waveform.plot_point.ucolor.push_back(v.color);
             });
         }
         let len = self.waveform.plot_point.uu.len();
@@ -138,10 +135,7 @@ impl NanometersApp {
                     .plot_point
                     .dd
                     .push_back(rect.center().y - rect.height() * v.value.min / 2.0);
-                self.waveform
-                    .plot_point
-                    .dcolor
-                    .push_back(full_brightness_color(&v.color));
+                self.waveform.plot_point.dcolor.push_back(v.color);
             });
         }
         let len = self.waveform.plot_point.du.len();
@@ -193,15 +187,15 @@ impl NanometersApp {
                 self.waveform
                     .plot_point
                     .r
-                    .push_back(rect.height() * (1.0 - v.color[0]));
+                    .push_back(rect.height() * (1.0 - (v.color.r() / 255) as f32));
                 self.waveform
                     .plot_point
                     .g
-                    .push_back(rect.height() * (1.0 - v.color[1]));
+                    .push_back(rect.height() * (1.0 - (v.color.g() / 255) as f32));
                 self.waveform
                     .plot_point
                     .b
-                    .push_back(rect.height() * (1.0 - v.color[2]));
+                    .push_back(rect.height() * (1.0 - (v.color.b() / 255) as f32));
             });
         }
         let len = self.waveform.plot_point.r.len();

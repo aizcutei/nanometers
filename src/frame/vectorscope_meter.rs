@@ -296,11 +296,12 @@ impl NanometersApp {
                                 if data.r.is_empty() {
                                     ui.painter().extend(self.vectorscope.plot.clone());
                                 } else {
+                                    let max = data.r_max.max(data.g_max).max(data.b_max);
                                     let transform = emath::TSTransform::new(
                                         [rect.center().x, rect.center().y].into(),
                                         if self.setting.vectorscope.normalize {
                                             if data.max > 0.001 {
-                                                rect.center().y / (1.0 + data.max.log10() / 3.0)
+                                                rect.center().y / (1.0 + max.log10() / 3.0)
                                             } else {
                                                 rect.center().y
                                             }
@@ -463,10 +464,11 @@ impl NanometersApp {
                                 if data.r.is_empty() {
                                     ui.painter().extend(self.vectorscope.plot.clone());
                                 } else {
+                                    let max = data.r_max.max(data.g_max).max(data.b_max);
                                     let transform = emath::TSTransform::new(
                                         [rect.center().x, rect.max.y].into(),
                                         if self.setting.vectorscope.normalize {
-                                            0.717067812 * rect.max.y / data.max
+                                            0.717067812 * rect.max.y / max
                                         } else {
                                             0.717067812 * rect.center().y
                                         },
@@ -660,26 +662,11 @@ impl NanometersApp {
                                 if data.r.is_empty() {
                                     ui.painter().extend(self.vectorscope.plot.clone());
                                 } else {
-                                    let transform_r = emath::TSTransform::new(
+                                    let max = data.r_max.max(data.g_max).max(data.b_max);
+                                    let transform = emath::TSTransform::new(
                                         [rect.center().x, rect.center().y].into(),
                                         if self.setting.vectorscope.normalize {
-                                            0.3535533906 * rect.max.y / data.r_max
-                                        } else {
-                                            0.3535533906 * rect.center().y
-                                        },
-                                    );
-                                    let transform_g = emath::TSTransform::new(
-                                        [rect.center().x, rect.center().y].into(),
-                                        if self.setting.vectorscope.normalize {
-                                            0.3535533906 * rect.max.y / data.g_max
-                                        } else {
-                                            0.3535533906 * rect.center().y
-                                        },
-                                    );
-                                    let transform_b = emath::TSTransform::new(
-                                        [rect.center().x, rect.center().y].into(),
-                                        if self.setting.vectorscope.normalize {
-                                            0.3535533906 * rect.max.y / data.b_max
+                                            0.3535533906 * rect.max.y / max
                                         } else {
                                             0.3535533906 * rect.center().y
                                         },
@@ -689,7 +676,7 @@ impl NanometersApp {
                                         .iter()
                                         .map(|p| {
                                             Shape::circle_filled(
-                                                transform_r.mul_pos(p.clone()),
+                                                transform.mul_pos(p.clone()),
                                                 self.setting.vectorscope.point_size * 0.5,
                                                 Color32::from_rgb_additive(255, 0, 0),
                                             )
@@ -700,7 +687,7 @@ impl NanometersApp {
                                         .iter()
                                         .map(|p| {
                                             Shape::circle_filled(
-                                                transform_g.mul_pos(p.clone()),
+                                                transform.mul_pos(p.clone()),
                                                 self.setting.vectorscope.point_size * 0.5,
                                                 Color32::from_rgb_additive(0, 255, 0),
                                             )
@@ -711,7 +698,7 @@ impl NanometersApp {
                                         .iter()
                                         .map(|p| {
                                             Shape::circle_filled(
-                                                transform_b.mul_pos(p.clone()),
+                                                transform.mul_pos(p.clone()),
                                                 self.setting.vectorscope.point_size * 0.5,
                                                 Color32::from_rgb_additive(0, 0, 255),
                                             )
@@ -818,26 +805,11 @@ impl NanometersApp {
                     if data.r.is_empty() {
                         ui.painter().extend(self.vectorscope.plot.clone());
                     } else {
-                        let transform_r = emath::TSTransform::new(
+                        let max = data.r_max.max(data.g_max).max(data.b_max);
+                        let transform = emath::TSTransform::new(
                             [rect.center().x, rect.center().y].into(),
                             if self.setting.vectorscope.normalize {
-                                rect.center().y / data.r_max
-                            } else {
-                                rect.center().y
-                            },
-                        );
-                        let transform_g = emath::TSTransform::new(
-                            [rect.center().x, rect.center().y].into(),
-                            if self.setting.vectorscope.normalize {
-                                rect.center().y / data.g_max
-                            } else {
-                                rect.center().y
-                            },
-                        );
-                        let transform_b = emath::TSTransform::new(
-                            [rect.center().x, rect.center().y].into(),
-                            if self.setting.vectorscope.normalize {
-                                rect.center().y / data.b_max
+                                rect.center().y / max
                             } else {
                                 rect.center().y
                             },
@@ -847,7 +819,7 @@ impl NanometersApp {
                             .iter()
                             .map(|p| {
                                 Shape::circle_filled(
-                                    transform_r.mul_pos(p.to_owned()).to_owned(),
+                                    transform.mul_pos(p.to_owned()).to_owned(),
                                     self.setting.vectorscope.point_size * 0.5,
                                     Color32::from_rgb_additive(255, 0, 0),
                                 )
@@ -858,7 +830,7 @@ impl NanometersApp {
                             .iter()
                             .map(|p| {
                                 Shape::circle_filled(
-                                    transform_g.mul_pos(p.to_owned()).to_owned(),
+                                    transform.mul_pos(p.to_owned()).to_owned(),
                                     self.setting.vectorscope.point_size * 0.5,
                                     Color32::from_rgb_additive(0, 255, 0),
                                 )
@@ -869,7 +841,7 @@ impl NanometersApp {
                             .iter()
                             .map(|p| {
                                 Shape::circle_filled(
-                                    transform_b.mul_pos(p.to_owned()).to_owned(),
+                                    transform.mul_pos(p.to_owned()).to_owned(),
                                     self.setting.vectorscope.point_size * 0.5,
                                     Color32::from_rgb_additive(0, 0, 255),
                                 )
