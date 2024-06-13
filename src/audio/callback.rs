@@ -40,12 +40,11 @@ pub fn get_callback(
             let r = data[1][i];
             let m = (l + r) / 2.0;
             let s = (l - r) / 2.0;
-            buf.raw.l.push(l);
-            buf.raw.r.push(r);
-            buf.raw.m.push(m);
-            buf.raw.s.push(s);
-
-            let raw_len = buf.raw.l.len();
+            // buf.raw.l.push(l);
+            // buf.raw.r.push(r);
+            // buf.raw.m.push(m);
+            // buf.raw.s.push(s);
+            // let raw_len = buf.raw.l.len();
 
             if spectrum_on {
                 if buf.spectrum.ab {
@@ -141,11 +140,83 @@ pub fn get_callback(
 
             if oscilloscope_on {
                 // Oscilloscope
-                if raw_len >= 2400 {
-                    send_data.oscilloscope = OscilloscopeSendData {
-                        len: 2400,
-                        data: buf.raw.m[raw_len - 2400..raw_len].to_vec(),
-                    };
+                if buf.setting.oscilloscope.follow_pitch {
+                    match buf.setting.oscilloscope.cycle {
+                        OscilloscopeCycle::Multi => {
+                            if buf.osc.last.is_none() {
+                                if m > 0.0 {
+                                    buf.osc.raw.push(m);
+                                    buf.osc.last = Some(m);
+                                }
+                            } else {
+                                let last_times_m = buf.osc.last.unwrap() * m;
+                                if last_times_m > 0.0 {
+                                    buf.osc.raw.push(m);
+                                    buf.osc.last = Some(m);
+                                } else if last_times_m == 0.0 {
+                                    buf.osc.raw.push(m);
+                                } else if last_times_m < 0.0 {
+                                    buf.osc.raw.push(m);
+                                    buf.osc.last = Some(m);
+                                    buf.osc.even_trun = !buf.osc.even_trun;
+                                }
+                            }
+                            if buf.osc.raw.len() >= 2400 && buf.osc.even_trun {
+                                send_data.oscilloscope = OscilloscopeSendData {
+                                    len: buf.osc.raw.len(),
+                                    data: buf.osc.raw.clone(),
+                                };
+                                buf.osc.clear();
+                            }
+                        }
+                        OscilloscopeCycle::Single => {
+                            if buf.osc.last.is_none() {
+                                if m > 0.0 {
+                                    buf.osc.raw.push(m);
+                                    buf.osc.last = Some(m);
+                                }
+                            } else {
+                                let last_times_m = buf.osc.last.unwrap() * m;
+                                if last_times_m > 0.0 {
+                                    buf.osc.raw.push(m);
+                                    buf.osc.last = Some(m);
+                                } else if last_times_m == 0.0 {
+                                    buf.osc.raw.push(m);
+                                } else if last_times_m < 0.0 {
+                                    buf.osc.raw.push(m);
+                                    buf.osc.last = Some(m);
+                                    if buf.osc.even_trun {
+                                        buf.osc.first_turn = true;
+                                    }
+                                    buf.osc.even_trun = !buf.osc.even_trun;
+                                }
+                            }
+                            if buf.osc.first_turn && buf.osc.even_trun {
+                                send_data.oscilloscope = OscilloscopeSendData {
+                                    len: buf.osc.raw.len(),
+                                    data: buf.osc.raw.clone(),
+                                };
+                                buf.osc.clear();
+                            }
+                        }
+                    }
+                    // in case of buffer overflow
+                    if buf.osc.raw.len() >= 4096 {
+                        send_data.oscilloscope = OscilloscopeSendData {
+                            len: buf.osc.raw.len(),
+                            data: buf.osc.raw.clone(),
+                        };
+                        buf.osc.clear();
+                    }
+                } else {
+                    buf.osc.raw.push(m);
+                    if buf.osc.raw.len() >= 2400 {
+                        send_data.oscilloscope = OscilloscopeSendData {
+                            len: 2400,
+                            data: buf.osc.raw.clone(),
+                        };
+                        buf.osc.clear();
+                    }
                 }
             }
 
@@ -320,9 +391,9 @@ pub fn get_callback(
                 }
             }
 
-            if raw_len >= 8192 {
-                buf.raw.keep_last(4096);
-            }
+            // if raw_len >= 8192 {
+            //     buf.raw.keep_last(4096);
+            // }
         }
 
         // Send data

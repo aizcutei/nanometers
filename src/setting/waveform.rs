@@ -210,6 +210,7 @@ pub struct WaveformSendData {
     pub r: Vec<WaveformSendFrame>,
     pub m: Vec<WaveformSendFrame>,
     pub s: Vec<WaveformSendFrame>,
+    // pub history: Vec<f32>,
 }
 
 impl WaveformSendData {

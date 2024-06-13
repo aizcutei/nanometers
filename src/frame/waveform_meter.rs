@@ -184,18 +184,19 @@ impl NanometersApp {
                     self.waveform.plot_point.g.pop_front();
                     self.waveform.plot_point.b.pop_front();
                 }
+
                 self.waveform
                     .plot_point
                     .r
-                    .push_back(rect.height() * (1.0 - (v.color.r() / 255) as f32));
+                    .push_back(rect.height() * (1.0 - v.color.r() as f32 / 255.0));
                 self.waveform
                     .plot_point
                     .g
-                    .push_back(rect.height() * (1.0 - (v.color.g() / 255) as f32));
+                    .push_back(rect.height() * (1.0 - v.color.g() as f32 / 255.0));
                 self.waveform
                     .plot_point
                     .b
-                    .push_back(rect.height() * (1.0 - (v.color.b() / 255) as f32));
+                    .push_back(rect.height() * (1.0 - v.color.b() as f32 / 255.0));
             });
         }
         let len = self.waveform.plot_point.r.len();

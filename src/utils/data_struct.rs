@@ -267,6 +267,7 @@ pub struct AudioSourceBuffer {
     pub vector: VectorscopeCalcBuffer,
     pub spectrogram: SpectrogramCalcBuffer,
     pub spectrum: SpectrumCalcBuffer,
+    pub osc: OscCalcBuffer,
     pub setting: Setting,
 }
 
@@ -309,20 +310,6 @@ pub struct SpectrumSendData {
 impl SpectrumSendData {
     pub fn new() -> Self {
         Self { frames: Vec::new() }
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct OscilloscopeSendData {
-    pub len: usize,
-    pub data: Vec<f32>,
-}
-
-impl OscilloscopeSendData {
-    pub fn new() -> Self {
-        Self {
-            ..Default::default()
-        }
     }
 }
 

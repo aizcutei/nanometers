@@ -229,21 +229,48 @@ impl NanometersApp {
                 ui.heading("Oscilloscope");
                 ui.horizontal(|ui| {
                     ui.label("Follow Pitch");
-                    ui.selectable_value(&mut self.setting.oscilloscope.follow_pitch, true, "On");
-                    ui.selectable_value(&mut self.setting.oscilloscope.follow_pitch, false, "Off");
+                    if ui
+                        .selectable_value(&mut self.setting.oscilloscope.follow_pitch, true, "On")
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
+                    if ui
+                        .selectable_value(&mut self.setting.oscilloscope.follow_pitch, false, "Off")
+                        .changed()
+                    {
+                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                    };
                 });
+                if self.setting.oscilloscope.follow_pitch {
+                    ui.horizontal(|ui| {
+                        ui.label("Cycle");
+                        if ui
+                            .selectable_value(
+                                &mut self.setting.oscilloscope.cycle,
+                                setting::OscilloscopeCycle::Multi,
+                                "Multi",
+                            )
+                            .changed()
+                        {
+                            self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        };
+                        if ui
+                            .selectable_value(
+                                &mut self.setting.oscilloscope.cycle,
+                                setting::OscilloscopeCycle::Single,
+                                "Single",
+                            )
+                            .changed()
+                        {
+                            self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        };
+                    });
+                };
                 ui.horizontal(|ui| {
-                    ui.label("Cycle");
-                    ui.selectable_value(
-                        &mut self.setting.oscilloscope.cycle,
-                        setting::OscilloscopeCycle::Multi,
-                        "Multi",
-                    );
-                    ui.selectable_value(
-                        &mut self.setting.oscilloscope.cycle,
-                        setting::OscilloscopeCycle::Single,
-                        "Single",
-                    );
+                    ui.label("Shadow");
+                    ui.selectable_value(&mut self.setting.oscilloscope.shadow, true, "On");
+                    ui.selectable_value(&mut self.setting.oscilloscope.shadow, false, "Off");
                 });
             });
         });
