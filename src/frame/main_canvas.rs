@@ -84,7 +84,7 @@ impl NanometersApp {
             update_vector_data.c.extend_from_slice(&data.vectorscope.c);
             update_waveform_data.concat(&data.waveform);
             update_osc_data = data.oscilloscope;
-            update_spectrogram_image = data.spectrogram_image;
+            // update_spectrogram_image = data.spectrogram_image;
             update_spectrum_data = data.spectrum;
         });
 

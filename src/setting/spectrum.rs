@@ -40,7 +40,7 @@ pub enum SpectrumFreqLine {
     Bright,
 }
 
-#[derive(Default, Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct SpectrumSetting {
     #[serde(skip)]
     pub(crate) spectrum_switch: SpectrumSwitch,
@@ -55,6 +55,25 @@ pub struct SpectrumSetting {
     pub(crate) ref_line: f32,
     pub(crate) threshold: f32,
     pub(crate) threshold_follow_slope: bool,
+}
+
+impl Default for SpectrumSetting {
+    fn default() -> Self {
+        Self {
+            spectrum_switch: SpectrumSwitch::Main,
+            mode: SpectrumMode::FFT,
+            smoothing: 0.0,
+            slope: 0.0,
+            channel: SpectrumChannel::LR,
+            low: -150.0,
+            high: 20.0,
+            freq_readout: SpectrumFreqReadout::Off,
+            freq_line: SpectrumFreqLine::Off,
+            ref_line: 0.0,
+            threshold: 0.0,
+            threshold_follow_slope: false,
+        }
+    }
 }
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]

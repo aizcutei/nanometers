@@ -4,6 +4,7 @@ use crate::setting::SpectrumMode;
 use crate::utils::*;
 use crate::NanometersApp;
 use egui::*;
+use rustfft::num_complex::ComplexFloat;
 use text::Fonts;
 
 impl NanometersApp {
@@ -25,6 +26,7 @@ impl NanometersApp {
             self.spectrum.ch1 = vec![0.0; 2049];
         }
 
+        // Ref lines
         match self.setting.spectrum.freq_line {
             SpectrumFreqLine::Off => {}
             SpectrumFreqLine::On => {
@@ -77,6 +79,8 @@ impl NanometersApp {
             Stroke::new(1.0, self.setting.theme.main),
         );
 
+        // Main
+        let mut max_index = 0;
         match self.setting.spectrum.mode {
             SpectrumMode::FFT => {
                 let mut wave_0_points = Vec::new();
@@ -100,6 +104,9 @@ impl NanometersApp {
                     );
                 } else {
                     for i in 0..2049 {
+                        if data.l[i] >= data.l[max_index] {
+                            max_index = i;
+                        }
                         if data.l[i] > self.spectrum.ch0[i] || self.spectrum.ch0[i].is_nan() {
                             self.spectrum.ch0[i] = data.l[i];
                             wave_0_points.push(pos2(
@@ -140,6 +147,15 @@ impl NanometersApp {
             }
             SpectrumMode::ColorBar => {}
             SpectrumMode::Both => {}
+        }
+        if max_index > 0 && max_index < 2048 {
+            let delta = (data.l[max_index + 1].abs() - data.l[max_index - 1].abs())
+                / (2.0
+                    * (2.0 * data.l[max_index].abs()
+                        - data.l[max_index - 1].abs()
+                        - data.l[max_index + 1].abs()));
+            let freq = (max_index as f32 + delta) * 11.7130307467;
+            let freq_str = format!("{:.1} Hz", freq);
         }
     }
 }

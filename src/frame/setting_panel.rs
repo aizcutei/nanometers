@@ -228,7 +228,8 @@ impl NanometersApp {
             ui.vertical(|ui| {
                 ui.heading("Oscilloscope");
                 ui.horizontal(|ui| {
-                    ui.label("Follow Pitch");
+                    ui.label("Follow Pitch")
+                        .on_hover_text("Whether to follow the pitch");
                     if ui
                         .selectable_value(&mut self.setting.oscilloscope.follow_pitch, true, "On")
                         .changed()
@@ -244,7 +245,7 @@ impl NanometersApp {
                 });
                 if self.setting.oscilloscope.follow_pitch {
                     ui.horizontal(|ui| {
-                        ui.label("Cycle");
+                        ui.label("Cycle").on_hover_text("Display how many cycles");
                         if ui
                             .selectable_value(
                                 &mut self.setting.oscilloscope.cycle,
@@ -268,7 +269,8 @@ impl NanometersApp {
                     });
                 };
                 ui.horizontal(|ui| {
-                    ui.label("Shadow");
+                    ui.label("Shadow")
+                        .on_hover_text("Whether to display shadow (need more CPU)");
                     ui.selectable_value(&mut self.setting.oscilloscope.shadow, true, "On");
                     ui.selectable_value(&mut self.setting.oscilloscope.shadow, false, "Off");
                 });

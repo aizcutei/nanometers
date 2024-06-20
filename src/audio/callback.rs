@@ -4,7 +4,7 @@ use egui::*;
 use realfft::RealFftPlanner;
 use rustfft::num_complex::{Complex, ComplexFloat};
 use std::sync::{Arc, Mutex};
-
+use tiny_skia::*;
 const SQRT_2: f32 = 1.4142135;
 
 pub fn get_callback(
@@ -40,11 +40,6 @@ pub fn get_callback(
             let r = data[1][i];
             let m = (l + r) / 2.0;
             let s = (l - r) / 2.0;
-            // buf.raw.l.push(l);
-            // buf.raw.r.push(r);
-            // buf.raw.m.push(m);
-            // buf.raw.s.push(s);
-            // let raw_len = buf.raw.l.len();
 
             if spectrum_on {
                 if buf.spectrum.ab {
@@ -390,10 +385,6 @@ pub fn get_callback(
                     send_data.iir.push(peak_buffer.sum / 4800.0);
                 }
             }
-
-            // if raw_len >= 8192 {
-            //     buf.raw.keep_last(4096);
-            // }
         }
 
         // Send data
@@ -425,12 +416,23 @@ fn process_spectrogram(
     raw_hann_dt: &mut [f32],
     raw_hann_t: &mut [f32],
 ) {
-    let resolution = 2048;
-    let speed = 4;
-    buf.spectrogram.image.drain(0..resolution * speed);
-    buf.spectrogram
-        .image
-        .extend(vec![Color32::TRANSPARENT; resolution * speed]);
+    // let resolution = 2048;
+    // let speed = 4;
+    // buf.spectrogram.image.drain(0..resolution * speed);
+    // buf.spectrogram
+    //     .image
+    //     .extend(vec![Color32::TRANSPARENT; resolution * speed]);
+    let mut paint = Paint::default();
+    paint.anti_alias = true;
+    let pixmap_w = 2048;
+    let pixmap_h = 4;
+    let mut pixmap = Pixmap::new(pixmap_w, pixmap_h).unwrap();
+
+    let r = buf.setting.theme.main.r();
+    let g = buf.setting.theme.main.g();
+    let b = buf.setting.theme.main.b();
+    let boost = buf.setting.spectrogram.brightness_boost as f32;
+
     let mut real_planner = RealFftPlanner::<f32>::new();
     let r2c = real_planner.plan_fft_forward(2048);
     let mut spectrum = r2c.make_output_vec();
@@ -447,62 +449,71 @@ fn process_spectrogram(
 
         if fc_temp > 0.0 && fc_temp < 22000.0 {
             let image_x = if buf.setting.spectrogram.curve == SpectrogramCurve::Linear {
-                fc_temp.floor() / 22000.0 * resolution as f32
+                fc_temp / 22000.0 * pixmap_w as f32
             } else {
-                0.2991878257 * (fc_temp.log10() - 1.0) * resolution as f32
+                0.2991878257 * (fc_temp.log10() - 1.0) * pixmap_w as f32
             };
-            let image_y = 1920.0 + tc_temp * 46.875 * speed as f32;
-
-            let o_x_weight = image_x - image_x.floor();
-            let o_y_weight = image_y - image_y.floor();
-            let o_x = image_x.floor() as usize;
-            let o_y = image_y.floor() as usize;
-            let o_00_weight = o_x_weight * o_y_weight;
-            let o_01_weight = o_x_weight * (1.0 - o_y_weight);
-            let o_10_weight = (1.0 - o_x_weight) * o_y_weight;
-            let o_11_weight = (1.0 - o_x_weight) * (1.0 - o_y_weight);
-            let o_00_index = o_x + o_y * resolution;
-            let o_01_index = o_x + (o_y + 1) * resolution;
-            let o_10_index = o_x + 1 + o_y * resolution;
-            let o_11_index = o_x + 1 + (o_y + 1) * resolution;
-
-            let o_00_c = buf.spectrogram.image[o_00_index].a();
-            let o_01_c = buf.spectrogram.image[o_01_index].a();
-            let o_10_c = buf.spectrogram.image[o_10_index].a();
-            let o_11_c = buf.spectrogram.image[o_11_index].a();
-
-            let r = buf.setting.theme.main.r();
-            let g = buf.setting.theme.main.g();
-            let b = buf.setting.theme.main.b();
-            let boost = buf.setting.spectrogram.brightness_boost as f32;
-
-            buf.spectrogram.image[o_00_index] = Color32::from_rgba_unmultiplied(
-                r,
-                g,
-                b,
-                o_00_c.wrapping_add((boost * 255.0 * fft_x[i].norm() * o_00_weight) as u8),
+            let image_y = 2.0 * (tc_temp / 0.0213333333 + 1.0);
+            let intensity = if fft_x[i].norm().log10() > -80.0 {
+                (255.0 * fft_x[i].norm().log10() + 80.0) / 80.0
+            } else {
+                0.0
+            };
+            paint.set_color_rgba8(r, g, b, (boost * 255.0 * intensity) as u8);
+            pixmap.fill_rect(
+                tiny_skia::Rect::from_ltrb(image_x, image_y, image_x + 1.0, image_y + 1.0)
+                    .expect("Can't draw on spectogram pixmap"),
+                &paint,
+                Transform::identity(),
+                None,
             );
-            buf.spectrogram.image[o_01_index] = Color32::from_rgba_unmultiplied(
-                r,
-                g,
-                b,
-                o_01_c.wrapping_add((boost * 255.0 * fft_x[i].norm() * o_01_weight) as u8),
-            );
-            buf.spectrogram.image[o_10_index] = Color32::from_rgba_unmultiplied(
-                r,
-                g,
-                b,
-                o_10_c.wrapping_add((boost * 255.0 * fft_x[i].norm() * o_10_weight) as u8),
-            );
-            buf.spectrogram.image[o_11_index] = Color32::from_rgba_unmultiplied(
-                r,
-                g,
-                b,
-                o_11_c.wrapping_add((boost * 255.0 * fft_x[i].norm() * o_11_weight) as u8),
-            );
+
+            // let o_x_weight = image_x - image_x.floor();
+            // let o_y_weight = image_y - image_y.floor();
+            // let o_x = image_x.floor() as usize;
+            // let o_y = image_y.floor() as usize;
+            // let o_00_weight = o_x_weight * o_y_weight;
+            // let o_01_weight = o_x_weight * (1.0 - o_y_weight);
+            // let o_10_weight = (1.0 - o_x_weight) * o_y_weight;
+            // let o_11_weight = (1.0 - o_x_weight) * (1.0 - o_y_weight);
+            // let o_00_index = o_x + o_y * resolution;
+            // let o_01_index = o_x + (o_y + 1) * resolution;
+            // let o_10_index = o_x + 1 + o_y * resolution;
+            // let o_11_index = o_x + 1 + (o_y + 1) * resolution;
+
+            // let o_00_c = buf.spectrogram.image[o_00_index].a();
+            // let o_01_c = buf.spectrogram.image[o_01_index].a();
+            // let o_10_c = buf.spectrogram.image[o_10_index].a();
+            // let o_11_c = buf.spectrogram.image[o_11_index].a();
+
+            // buf.spectrogram.image[o_00_index] = Color32::from_rgba_unmultiplied(
+            //     r,
+            //     g,
+            //     b,
+            //     o_00_c.wrapping_add((boost * 255.0 * fft_x[i].norm() * o_00_weight) as u8),
+            // );
+            // buf.spectrogram.image[o_01_index] = Color32::from_rgba_unmultiplied(
+            //     r,
+            //     g,
+            //     b,
+            //     o_01_c.wrapping_add((boost * 255.0 * fft_x[i].norm() * o_01_weight) as u8),
+            // );
+            // buf.spectrogram.image[o_10_index] = Color32::from_rgba_unmultiplied(
+            //     r,
+            //     g,
+            //     b,
+            //     o_10_c.wrapping_add((boost * 255.0 * fft_x[i].norm() * o_10_weight) as u8),
+            // );
+            // buf.spectrogram.image[o_11_index] = Color32::from_rgba_unmultiplied(
+            //     r,
+            //     g,
+            //     b,
+            //     o_11_c.wrapping_add((boost * 255.0 * fft_x[i].norm() * o_11_weight) as u8),
+            // );
         }
     }
-    send_data.spectrogram_image = buf.spectrogram.image[0..1920 * resolution].to_owned();
+    // send_data.spectrogram_image = buf.spectrogram.image[0..1920 * resolution].to_owned();
+    send_data.spectrogram_frame = pixmap.clone();
     buf.spectrogram.ab = !buf.spectrogram.ab;
 }
 

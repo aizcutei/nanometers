@@ -1,6 +1,7 @@
 use crate::setting::*;
 use egui::*;
 use std::{collections::binary_heap, fmt::Display};
+use tiny_skia::Pixmap;
 
 #[derive(Debug, Clone, Default)]
 pub struct RawData {
@@ -217,7 +218,7 @@ pub struct SpectrogramCalcBuffer {
     pub ab: bool,
     pub a: SpectrogramOneWindow,
     pub b: SpectrogramOneWindow,
-    pub image: Vec<Color32>,
+    // pub image: Vec<Color32>,
 }
 
 impl SpectrogramCalcBuffer {
@@ -226,7 +227,7 @@ impl SpectrogramCalcBuffer {
             ab: false,
             a: SpectrogramOneWindow::new(),
             b: SpectrogramOneWindow::new(),
-            image: vec![Color32::TRANSPARENT; 4000 * 4000],
+            // image: vec![Color32::TRANSPARENT; 4000 * 4000],
         }
     }
 }
@@ -313,7 +314,7 @@ impl SpectrumSendData {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct SendData {
     pub waveform: WaveformSendData,
     pub iir: Vec<f32>,
@@ -321,13 +322,29 @@ pub struct SendData {
     pub vectorscope: VectorscopeSendData,
     pub spectrum: RawData,
     pub oscilloscope: OscilloscopeSendData,
-    pub spectrogram_image: Vec<Color32>,
+    // pub spectrogram_image: Vec<Color32>,
+    pub spectrogram_frame: Pixmap,
 }
 
 impl SendData {
     pub fn new() -> Self {
         Self {
             ..Default::default()
+        }
+    }
+}
+
+impl Default for SendData {
+    fn default() -> Self {
+        Self {
+            waveform: WaveformSendData::new(),
+            iir: vec![0.0; 2],
+            db: DBData::new(),
+            vectorscope: VectorscopeSendData::new(),
+            spectrum: RawData::new(),
+            oscilloscope: OscilloscopeSendData::new(),
+            // spectrogram_image: vec![Color32::TRANSPARENT; 4000 * 4000],
+            spectrogram_frame: Pixmap::new(1, 1).unwrap(),
         }
     }
 }
