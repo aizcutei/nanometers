@@ -2,13 +2,13 @@ use crate::utils::*;
 use egui::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub enum SpectrogramContrast {
-    #[default]
-    L,
-    M,
-    H,
-}
+// #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+// pub enum SpectrogramContrast {
+//     #[default]
+//     L,
+//     M,
+//     H,
+// }
 
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SpectrogramOrientation {
@@ -36,8 +36,8 @@ pub struct SpectrogramSetting {
     pub(crate) orientation: SpectrogramOrientation,
     pub(crate) mode: SpectrogramMode,
     pub(crate) curve: SpectrogramCurve,
-    pub(crate) contrast: SpectrogramContrast,
-    pub(crate) brightness_boost: f64,
+    // pub(crate) contrast: SpectrogramContrast,
+    pub(crate) brightness_boost: f32,
     pub(crate) resolution: usize,
 }
 
@@ -47,7 +47,7 @@ impl Default for SpectrogramSetting {
             orientation: SpectrogramOrientation::H,
             mode: SpectrogramMode::Sharp,
             curve: SpectrogramCurve::Linear,
-            contrast: SpectrogramContrast::L,
+            // contrast: SpectrogramContrast::L,
             brightness_boost: 0.05,
             resolution: 2048,
         }

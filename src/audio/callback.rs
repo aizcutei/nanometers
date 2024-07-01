@@ -147,8 +147,7 @@ pub fn get_callback(
                                             0.2991878257 * (fc.log10() - 1.0)
                                         };
                                         let t = tc / 0.02133333333;
-                                        let c = (db + 80.0)
-                                            * 3.1875
+                                        let c = (db + 70.0) * 255.0 / 70.0
                                             * buf.setting.spectrogram.brightness_boost as f32;
                                         send_data.spectrogram.f.push(f);
                                         send_data.spectrogram.t.push(t);
@@ -452,7 +451,7 @@ pub fn get_callback(
             send_data.db.r = gain_to_db(amp_r);
         }
 
-        tx_data.send(send_data).unwrap();
+        tx_data.send(send_data).unwrap_or_default();
     })
 }
 
