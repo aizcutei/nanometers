@@ -155,7 +155,7 @@ impl NanometersApp {
                         - data.l[max_index - 1].abs()
                         - data.l[max_index + 1].abs()));
             let freq = (max_index as f32 + delta) * 11.7130307467;
-            let freq_str = format!("{:.1} Hz", freq);
+            let freq_str = format!("{:.2} Hz", freq);
         }
     }
 }

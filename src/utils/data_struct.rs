@@ -1,7 +1,7 @@
 use crate::setting::*;
 use egui::*;
+use std::collections::VecDeque;
 use std::{collections::binary_heap, fmt::Display};
-use tiny_skia::Pixmap;
 
 #[derive(Debug, Clone, Default)]
 pub struct RawData {
@@ -19,28 +19,6 @@ impl RawData {
             s: vec![],
         }
     }
-
-    // pub fn concat(&mut self, data: RawData) {
-    //     self.l.extend(data.l);
-    //     self.r.extend(data.r);
-    //     self.m.extend(data.m);
-    //     self.s.extend(data.s);
-    // }
-
-    // pub fn concat_front(&mut self, data: RawData) {
-    //     self.l.splice(0..0, data.l);
-    //     self.r.splice(0..0, data.r);
-    //     self.m.splice(0..0, data.m);
-    //     self.s.splice(0..0, data.s);
-    // }
-
-    // pub fn split_index(&self, index: usize) -> RawData {
-    //     let l = self.l[index..].to_vec();
-    //     let r = self.r[index..].to_vec();
-    //     let m = self.m[index..].to_vec();
-    //     let s = self.s[index..].to_vec();
-    //     RawData { l, r, m, s }
-    // }
 
     pub fn keep_last(&mut self, size: usize) {
         let len = self.l.len();
@@ -188,14 +166,14 @@ impl VectorscopeCalcBuffer {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct SpectrogramOneWindow {
+pub struct SpectrogramCalcFrame {
     pub index: usize,
     pub raw_hann: Vec<f32>,
     pub raw_hann_dt: Vec<f32>,
     pub raw_hann_t: Vec<f32>,
 }
 
-impl SpectrogramOneWindow {
+impl SpectrogramCalcFrame {
     pub fn new() -> Self {
         Self {
             index: 0,
@@ -215,19 +193,19 @@ impl SpectrogramOneWindow {
 
 #[derive(Debug, Clone)]
 pub struct SpectrogramCalcBuffer {
-    pub ab: bool,
-    pub a: SpectrogramOneWindow,
-    pub b: SpectrogramOneWindow,
-    // pub image: Vec<Color32>,
+    // pub ab: bool,
+    // pub a: SpectrogramOneWindow,
+    // pub b: SpectrogramOneWindow,
+    pub frames: VecDeque<SpectrogramCalcFrame>,
 }
 
 impl SpectrogramCalcBuffer {
     pub fn new() -> Self {
         Self {
-            ab: false,
-            a: SpectrogramOneWindow::new(),
-            b: SpectrogramOneWindow::new(),
-            // image: vec![Color32::TRANSPARENT; 4000 * 4000],
+            // ab: false,
+            // a: SpectrogramOneWindow::new(),
+            // b: SpectrogramOneWindow::new(),
+            frames: VecDeque::new(),
         }
     }
 }
@@ -314,6 +292,22 @@ impl SpectrumSendData {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct SpectrogramSendFrame {
+    pub f: Vec<f32>,
+    pub t: Vec<f32>,
+    pub i: Vec<u8>,
+    pub classic_i: Vec<u8>,
+}
+
+impl SpectrogramSendFrame {
+    pub fn new() -> Self {
+        Self {
+            ..Default::default()
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SendData {
     pub waveform: WaveformSendData,
@@ -322,8 +316,7 @@ pub struct SendData {
     pub vectorscope: VectorscopeSendData,
     pub spectrum: RawData,
     pub oscilloscope: OscilloscopeSendData,
-    // pub spectrogram_image: Vec<Color32>,
-    pub spectrogram_frame: Pixmap,
+    pub spectrogram: SpectrogramSendFrame,
 }
 
 impl SendData {
@@ -343,8 +336,7 @@ impl Default for SendData {
             vectorscope: VectorscopeSendData::new(),
             spectrum: RawData::new(),
             oscilloscope: OscilloscopeSendData::new(),
-            // spectrogram_image: vec![Color32::TRANSPARENT; 4000 * 4000],
-            spectrogram_frame: Pixmap::new(1, 1).unwrap(),
+            spectrogram: SpectrogramSendFrame::new(),
         }
     }
 }

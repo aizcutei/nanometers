@@ -76,15 +76,30 @@ pub struct SpectrogramRects {
 pub struct Spectrogram {
     #[serde(skip)]
     pub(crate) texture: Option<egui::TextureHandle>,
+
+    #[cfg(target_os = "macos")]
+    #[serde(skip)]
+    pub(crate) last_img: Option<piet_common::CoreGraphicsImage>,
+
+    #[cfg(target_os = "windows")]
+    #[serde(skip)]
+    pub(crate) last_img: Option<piet_common::D2DImage>,
+
+    #[cfg(target_os = "linux")]
+    #[serde(skip)]
+    pub(crate) last_img: Option<piet_common::CairoImage>,
 }
 
 impl Spectrogram {
     pub fn new() -> Self {
-        Self { texture: None }
+        Self {
+            texture: None,
+            last_img: None,
+        }
     }
 }
 
-pub fn updata_spectrogram_window(window: &mut SpectrogramOneWindow, index: usize, value: f32) {
+pub fn updata_spectrogram_window(window: &mut SpectrogramCalcFrame, index: usize, value: f32) {
     window.raw_hann.push(value * HANN_2048[index]);
     window.raw_hann_t.push(value * HANN_T_2048[index]);
     window.raw_hann_dt.push(value * HANN_DT_2048[index]);
