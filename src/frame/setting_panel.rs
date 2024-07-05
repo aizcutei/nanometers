@@ -134,7 +134,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.spectrogram.mode = setting::SpectrogramMode::Sharp;
                     };
                     if ui
                         .selectable_value(
@@ -144,7 +145,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.spectrogram.mode = setting::SpectrogramMode::Classic;
                     };
                 });
                 ui.horizontal(|ui| {
@@ -157,7 +159,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.spectrogram.curve = setting::SpectrogramCurve::Linear;
                     };
                     if ui
                         .selectable_value(
@@ -167,42 +170,11 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.spectrogram.curve =
+                            setting::SpectrogramCurve::Logarithmic;
                     };
                 });
-                // ui.horizontal(|ui| {
-                //     ui.label("Contrast");
-                //     if ui
-                //         .selectable_value(
-                //             &mut self.setting.spectrogram.contrast,
-                //             setting::SpectrogramContrast::L,
-                //             "Low",
-                //         )
-                //         .changed()
-                //     {
-                //         self.tx_setting.as_ref().unwrap().send(self.setting.clone());
-                //     };
-                //     if ui
-                //         .selectable_value(
-                //             &mut self.setting.spectrogram.contrast,
-                //             setting::SpectrogramContrast::M,
-                //             "Mid",
-                //         )
-                //         .changed()
-                //     {
-                //         self.tx_setting.as_ref().unwrap().send(self.setting.clone());
-                //     };
-                //     if ui
-                //         .selectable_value(
-                //             &mut self.setting.spectrogram.contrast,
-                //             setting::SpectrogramContrast::H,
-                //             "High",
-                //         )
-                //         .changed()
-                //     {
-                //         self.tx_setting.as_ref().unwrap().send(self.setting.clone());
-                //     };
-                // });
                 ui.horizontal(|ui| {
                     ui.label("Brightness Boost");
                     if ui
@@ -215,7 +187,9 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.spectrogram.brightness_boost =
+                            self.setting.spectrogram.brightness_boost;
                     };
                 });
             });
@@ -234,13 +208,15 @@ impl NanometersApp {
                         .selectable_value(&mut self.setting.oscilloscope.follow_pitch, true, "On")
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.oscilloscope.follow_pitch = true;
                     };
                     if ui
                         .selectable_value(&mut self.setting.oscilloscope.follow_pitch, false, "Off")
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.oscilloscope.follow_pitch = false;
                     };
                 });
                 if self.setting.oscilloscope.follow_pitch {
@@ -254,7 +230,10 @@ impl NanometersApp {
                             )
                             .changed()
                         {
-                            self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                            let mut audio_souce_setting =
+                                self.audio_source_setting.try_lock().unwrap();
+                            audio_souce_setting.oscilloscope.cycle =
+                                setting::OscilloscopeCycle::Multi;
                         };
                         if ui
                             .selectable_value(
@@ -264,7 +243,10 @@ impl NanometersApp {
                             )
                             .changed()
                         {
-                            self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                            let mut audio_souce_setting =
+                                self.audio_source_setting.try_lock().unwrap();
+                            audio_souce_setting.oscilloscope.cycle =
+                                setting::OscilloscopeCycle::Single;
                         };
                     });
                 };
@@ -294,7 +276,7 @@ impl NanometersApp {
                     self.audio_source.as_mut().unwrap().stop();
                     let callback = get_callback(
                         self.tx_data.clone().unwrap(),
-                        self.rx_setting.clone().unwrap(),
+                        self.audio_source_setting.clone(),
                         self.audio_source_buffer.clone(),
                     );
                     let mut system_capture = SystemCapture::new(callback);
@@ -313,7 +295,7 @@ impl NanometersApp {
 
                     let callback = get_callback(
                         self.tx_data.clone().unwrap(),
-                        self.rx_setting.clone().unwrap(),
+                        self.audio_source_setting.clone(),
                         self.audio_source_buffer.clone(),
                     );
                     let mut plugin_client = PluginClient::new(callback);
@@ -414,11 +396,10 @@ impl NanometersApp {
                     let column = &mut self.setting.meters[to.col];
                     to.row = to.row.min(column.len());
                     column.insert(to.row, item);
-                    self.tx_setting
-                        .as_ref()
-                        .unwrap()
-                        .send(self.setting.clone())
-                        .unwrap();
+                    {
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.meters = self.setting.meters.clone();
+                    }
                 }
             });
         });
@@ -439,7 +420,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.vectorscope = self.setting.vectorscope.clone();
                     };
                     if ui
                         .selectable_value(
@@ -449,7 +431,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.vectorscope = self.setting.vectorscope.clone();
                     };
                     if ui
                         .selectable_value(
@@ -459,7 +442,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.vectorscope = self.setting.vectorscope.clone();
                     };
                 });
                 ui.horizontal(|ui| {
@@ -472,7 +456,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.vectorscope = self.setting.vectorscope.clone();
                     };
                     if ui
                         .selectable_value(
@@ -482,7 +467,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.vectorscope = self.setting.vectorscope.clone();
                     };
                     if ui
                         .selectable_value(
@@ -492,7 +478,8 @@ impl NanometersApp {
                         )
                         .changed()
                     {
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.vectorscope = self.setting.vectorscope.clone();
                     };
                 });
                 if self.setting.vectorscope.mode != VectorscopeMode::Lissajous {
@@ -585,7 +572,9 @@ impl NanometersApp {
                                 )
                                 .changed()
                             {
-                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                                let mut audio_souce_setting =
+                                    self.audio_source_setting.try_lock().unwrap();
+                                audio_souce_setting.spectrum = self.setting.spectrum.clone();
                             };
                         });
                     }
@@ -600,7 +589,9 @@ impl NanometersApp {
                                 )
                                 .changed()
                             {
-                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                                let mut audio_souce_setting =
+                                    self.audio_source_setting.try_lock().unwrap();
+                                audio_souce_setting.spectrum = self.setting.spectrum.clone();
                             };
                             if ui
                                 .selectable_value(
@@ -610,7 +601,9 @@ impl NanometersApp {
                                 )
                                 .changed()
                             {
-                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                                let mut audio_souce_setting =
+                                    self.audio_source_setting.try_lock().unwrap();
+                                audio_souce_setting.spectrum = self.setting.spectrum.clone();
                             };
                         });
                         ui.horizontal(|ui| {
@@ -625,7 +618,9 @@ impl NanometersApp {
                                 )
                                 .changed()
                             {
-                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                                let mut audio_souce_setting =
+                                    self.audio_source_setting.try_lock().unwrap();
+                                audio_souce_setting.spectrum = self.setting.spectrum.clone();
                             };
                         });
                         ui.horizontal(|ui| {
@@ -640,7 +635,9 @@ impl NanometersApp {
                                 )
                                 .changed()
                             {
-                                self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                                let mut audio_souce_setting =
+                                    self.audio_source_setting.try_lock().unwrap();
+                                audio_souce_setting.spectrum = self.setting.spectrum.clone();
                             };
                         });
                     }
@@ -720,7 +717,8 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::DARK_THEME;
                         ui.ctx().set_visuals(set_theme(self));
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.theme = self.setting.theme;
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::LIGHT_THEME, "Light")
@@ -728,7 +726,8 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::LIGHT_THEME;
                         ui.ctx().set_visuals(set_theme(self));
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.theme = self.setting.theme;
                     };
                     if ui
                         .selectable_value(&mut self.setting.theme, setting::PINK_THEME, "Pink")
@@ -736,7 +735,8 @@ impl NanometersApp {
                     {
                         self.setting.theme = setting::PINK_THEME;
                         ui.ctx().set_visuals(set_theme(self));
-                        self.tx_setting.as_ref().unwrap().send(self.setting.clone());
+                        let mut audio_souce_setting = self.audio_source_setting.try_lock().unwrap();
+                        audio_souce_setting.theme = self.setting.theme;
                     }
                 });
             });

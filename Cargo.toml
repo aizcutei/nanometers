@@ -27,7 +27,7 @@ realfft = "3.3.0"
 ruhear = "0.1.0"
 log = "0.4"
 rayon = "1.10"
-crossbeam-channel = "0.5.12"
+# crossbeam-channel = "0.5.12"
 puffin = { version = "0.19", optional = true }
 puffin_http = { version = "0.16", optional = true }
 piet-common = "0.6.2"

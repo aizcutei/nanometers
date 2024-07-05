@@ -1,22 +1,27 @@
 use crate::{setting::*, utils::*};
-use crossbeam_channel::{Receiver, Sender};
+// use crossbeam_channel::{Receiver, Sender};
 use egui::*;
 use realfft::RealFftPlanner;
 use rustfft::num_complex::{Complex, ComplexFloat};
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 const SQRT_2: f32 = 1.4142135;
 
 pub fn get_callback(
     tx_data: Sender<SendData>,
-    rx_setting: Receiver<Setting>,
+    setting: Arc<Mutex<Setting>>,
     buffer: Arc<Mutex<AudioSourceBuffer>>,
-) -> Box<dyn FnMut(Vec<Vec<f32>>) + Send + Sync> {
+) -> Box<dyn FnMut(Vec<Vec<f32>>) + Send> {
     Box::new(move |data: Vec<Vec<f32>>| {
         #[cfg(feature = "puffin")]
         puffin::profile_scope!("callback");
 
         let mut buf = buffer.lock().unwrap();
-        rx_setting.try_iter().for_each(|s| buf.setting = s);
+        {
+            let setting = setting.lock().unwrap();
+            buf.setting = setting.clone();
+        }
+
         let mut send_data = SendData::new();
         let len = data[0].len();
 

@@ -2,14 +2,6 @@ use crate::utils::*;
 use egui::*;
 use serde::{Deserialize, Serialize};
 
-// #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
-// pub enum SpectrogramContrast {
-//     #[default]
-//     L,
-//     M,
-//     H,
-// }
-
 #[derive(Default, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SpectrogramOrientation {
     #[default]
@@ -36,7 +28,6 @@ pub struct SpectrogramSetting {
     pub(crate) orientation: SpectrogramOrientation,
     pub(crate) mode: SpectrogramMode,
     pub(crate) curve: SpectrogramCurve,
-    // pub(crate) contrast: SpectrogramContrast,
     pub(crate) brightness_boost: f32,
     pub(crate) resolution: usize,
 }
@@ -47,7 +38,6 @@ impl Default for SpectrogramSetting {
             orientation: SpectrogramOrientation::H,
             mode: SpectrogramMode::Sharp,
             curve: SpectrogramCurve::Linear,
-            // contrast: SpectrogramContrast::L,
             brightness_boost: 0.05,
             resolution: 2048,
         }
@@ -77,17 +67,8 @@ pub struct Spectrogram {
     #[serde(skip)]
     pub(crate) texture: Option<egui::TextureHandle>,
 
-    #[cfg(target_os = "macos")]
     #[serde(skip)]
-    pub(crate) last_img: Option<piet_common::CoreGraphicsImage>,
-
-    #[cfg(target_os = "windows")]
-    #[serde(skip)]
-    pub(crate) last_img: Option<piet_common::D2DImage>,
-
-    #[cfg(target_os = "linux")]
-    #[serde(skip)]
-    pub(crate) last_img: Option<piet_common::CairoImage>,
+    pub(crate) last_img: Option<piet_common::PietImage>,
 }
 
 impl Spectrogram {

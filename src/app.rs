@@ -4,14 +4,15 @@ use crate::frame::*;
 use crate::setting::*;
 use crate::utils::*;
 
-use crossbeam_channel::unbounded;
-use crossbeam_channel::{Receiver, Sender};
+// use crossbeam_channel::unbounded;
+// use crossbeam_channel::{Receiver, Sender};
 use eframe::egui::{self, ViewportCommand};
 use eframe::wgpu::core::storage;
 use eframe::wgpu::rwh::HasWindowHandle;
 use egui::*;
 use rayon::prelude::*;
 use std::sync::atomic::AtomicU32;
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::{thread, vec};
 
@@ -25,6 +26,9 @@ pub struct NanometersApp {
     /// Audio source data buffer.
     #[serde(skip)]
     pub(crate) audio_source_buffer: Arc<Mutex<AudioSourceBuffer>>,
+    #[serde(skip)]
+    pub(crate) audio_source_setting: Arc<Mutex<Setting>>,
+
     /// Calculate the frame time and FPS.
     #[serde(skip)]
     pub(crate) frame_history: FrameHistory,
@@ -34,12 +38,6 @@ pub struct NanometersApp {
     pub(crate) tx_data: Option<Sender<SendData>>,
     #[serde(skip)]
     pub(crate) rx_data: Option<Receiver<SendData>>,
-
-    /// Setting channel between GUI and audio source.
-    #[serde(skip)]
-    pub(crate) tx_setting: Option<Sender<Setting>>,
-    #[serde(skip)]
-    pub(crate) rx_setting: Option<Receiver<Setting>>,
 
     pub(crate) setting: Setting,
     pub(crate) sample_rate: AtomicU32,
@@ -59,14 +57,13 @@ pub struct NanometersApp {
 
 impl Default for NanometersApp {
     fn default() -> Self {
-        let (tx_data, rx_data) = unbounded();
-        let (tx_setting, rx_setting) = unbounded();
+        let (tx_data, rx_data) = channel();
         let audio_source_buffer = Arc::new(Mutex::new(AudioSourceBuffer::new()));
         let setting = Setting::default();
         let audio_source_setting = Arc::new(Mutex::new(setting.clone()));
         let mut system_capture = SystemCapture::new(get_callback(
             tx_data.clone(),
-            rx_setting.clone(),
+            audio_source_setting.clone(),
             audio_source_buffer.clone(),
         ));
         system_capture.start();
@@ -75,11 +72,10 @@ impl Default for NanometersApp {
         Self {
             audio_source,
             audio_source_buffer,
+            audio_source_setting,
             frame_history: Default::default(),
             tx_data: Some(tx_data),
             rx_data: Some(rx_data),
-            tx_setting: Some(tx_setting),
-            rx_setting: Some(rx_setting),
             setting,
             sample_rate: AtomicU32::new(48000),
             setting_switch: false,
@@ -105,14 +101,12 @@ impl NanometersApp {
             let mut app: NanometersApp =
                 eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
             cc.egui_ctx.set_visuals(set_theme(&mut app));
-            app.audio_source_buffer = Arc::new(Mutex::new(AudioSourceBuffer::new_with_setting(
-                app.setting.clone(),
-            )));
+            app.audio_source_setting = Arc::new(Mutex::new(app.setting.clone()));
             match app.setting.audio_device.device {
                 AudioDevice::OutputCapture => {
                     let mut system_capture = SystemCapture::new(get_callback(
                         app.tx_data.clone().unwrap(),
-                        app.rx_setting.clone().unwrap(),
+                        app.audio_source_setting.clone(),
                         app.audio_source_buffer.clone(),
                     ));
                     system_capture.start();
@@ -121,7 +115,7 @@ impl NanometersApp {
                 AudioDevice::PluginCapture => {
                     let mut plugin_client = PluginClient::new(get_callback(
                         app.tx_data.clone().unwrap(),
-                        app.rx_setting.clone().unwrap(),
+                        app.audio_source_setting.clone(),
                         app.audio_source_buffer.clone(),
                     ));
                     plugin_client.start();
