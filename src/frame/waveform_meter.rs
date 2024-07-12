@@ -2,7 +2,7 @@ use crate::setting::*;
 use crate::utils::*;
 use crate::NanometersApp;
 use egui::*;
-use rayon::prelude::*;
+// use rayon::prelude::*;
 use rustfft::num_traits::WrappingSub;
 
 impl NanometersApp {

@@ -2,7 +2,7 @@ use crate::setting::*;
 use crate::utils::*;
 use crate::NanometersApp;
 use egui::*;
-use rayon::iter::IntoParallelRefIterator;
+// use rayon::iter::IntoParallelRefIterator;
 
 const SQRT2_2: f32 = 0.7071067811865476;
 const SQRT2_4: f32 = 0.3535533905932738;

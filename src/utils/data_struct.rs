@@ -331,7 +331,7 @@ impl Default for SendData {
     fn default() -> Self {
         Self {
             waveform: WaveformSendData::new(),
-            iir: vec![0.0; 2],
+            iir: Vec::new(),
             db: DBData::new(),
             vectorscope: VectorscopeSendData::new(),
             spectrum: RawData::new(),

@@ -207,7 +207,7 @@ pub fn get_callback(
                                     buf.osc.even_trun = !buf.osc.even_trun;
                                 }
                             }
-                            if buf.osc.raw.len() >= 2400 && buf.osc.even_trun {
+                            if buf.osc.raw.len() >= 2200 && buf.osc.even_trun {
                                 send_data.oscilloscope = OscilloscopeSendData {
                                     len: buf.osc.raw.len(),
                                     data: buf.osc.raw.clone(),
@@ -247,11 +247,7 @@ pub fn get_callback(
                         }
                     }
                     // in case of buffer overflow
-                    if buf.osc.raw.len() >= 4096 {
-                        send_data.oscilloscope = OscilloscopeSendData {
-                            len: buf.osc.raw.len(),
-                            data: buf.osc.raw.clone(),
-                        };
+                    if buf.osc.raw.len() >= 8192 {
                         buf.osc.clear();
                     }
                 } else {

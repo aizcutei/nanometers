@@ -4,16 +4,14 @@ use crate::frame::*;
 use crate::setting::*;
 use crate::utils::*;
 
-// use crossbeam_channel::unbounded;
-// use crossbeam_channel::{Receiver, Sender};
 use eframe::egui::{self, ViewportCommand};
 use eframe::wgpu::core::storage;
-use eframe::wgpu::rwh::HasWindowHandle;
 use egui::*;
-use rayon::prelude::*;
-use std::sync::atomic::AtomicU32;
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::AtomicU32,
+    mpsc::{channel, Receiver, Sender},
+    Arc, Mutex,
+};
 use std::{thread, vec};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
